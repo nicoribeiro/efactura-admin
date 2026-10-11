@@ -83,6 +83,13 @@ export const dataProvider: DataProvider = {
         return { data: list.results as TData[], total: list.count };
       }
 
+      case "sucursales": {
+        // Sucursales de una empresa (pocas): la API devuelve la lista completa
+        const rut = requireRut(meta);
+        const sucursales = await apiJson<BaseRecord[]>("GET", `/empresa/${rut}/sucursales`);
+        return { data: sucursales as TData[], total: sucursales.length };
+      }
+
       case "caes": {
         // CAEs de una empresa (pocos): la API devuelve la lista completa
         const rut = requireRut(meta);

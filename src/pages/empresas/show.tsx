@@ -5,6 +5,7 @@ import { useParams } from "react-router";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
 import { EmailsTable } from "./emails";
+import { SucursalesTable } from "./sucursales";
 
 export function EmpresaShow() {
   const { id: rut = "" } = useParams();
@@ -39,6 +40,11 @@ export function EmpresaShow() {
                   <Descriptions.Item label="Usuario IMAP">{empresa.userRecepcion}</Descriptions.Item>
                 </Descriptions>
               ),
+            },
+            {
+              key: "sucursales",
+              label: "Sucursales",
+              children: <SucursalesTable rut={empresa.rut} />,
             },
             {
               key: "cae",
