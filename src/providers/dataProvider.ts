@@ -74,6 +74,15 @@ export const dataProvider: DataProvider = {
         return { data: list.results as TData[], total: list.count };
       }
 
+      case "emails": {
+        // Emails recibidos por la empresa (paginado en la API, maximo 50). Fechas: desde/hasta en segundos.
+        const rut = requireRut(meta);
+        const { fromDate, toDate, ...resto } = filtersToQuery(filters);
+        const query = { ...resto, desde: fromDate, hasta: toDate, page: currentPage, pageSize };
+        const list = await apiJson<ObjectList<BaseRecord>>("GET", `/empresa/${rut}/emails`, query);
+        return { data: list.results as TData[], total: list.count };
+      }
+
       case "caes": {
         // CAEs de una empresa (pocos): la API devuelve la lista completa
         const rut = requireRut(meta);

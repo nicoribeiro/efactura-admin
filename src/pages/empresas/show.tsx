@@ -4,6 +4,7 @@ import { Descriptions, Tabs, Tag } from "antd";
 import { useParams } from "react-router";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
+import { EmailsTable } from "./emails";
 
 export function EmpresaShow() {
   const { id: rut = "" } = useParams();
@@ -43,6 +44,11 @@ export function EmpresaShow() {
               key: "cae",
               label: "CAE",
               children: <CaeTable rut={empresa.rut} />,
+            },
+            {
+              key: "emails",
+              label: "Emails recibidos",
+              children: <EmailsTable rut={empresa.rut} />,
             },
           ]}
         />
