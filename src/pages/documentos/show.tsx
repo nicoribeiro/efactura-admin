@@ -7,6 +7,7 @@ import { ESTADOS_CFE, formatFechaApi, tipoDocByName } from "../../constants/cfe"
 import { useEmpresa } from "../../contexts/empresa";
 import { etiquetaEmpresa, type Documento } from "./list";
 import { abrirPdf } from "./pdf";
+import { SobreDocumentoInfo } from "./sobre";
 
 interface DocumentoDetalle extends Documento {
   fechaGeneracion?: string;
@@ -116,6 +117,20 @@ export function DocumentoShow() {
             <Table.Column title="Precio unitario" dataIndex="precioUnitario" align="right" render={monto} />
             <Table.Column title="Monto" dataIndex="montoItem" align="right" render={monto} />
           </Table>
+
+          {empresa && tipo && (
+            <>
+              <Typography.Title level={5} style={{ marginTop: 24 }}>
+                Sobre
+              </Typography.Title>
+              <SobreDocumentoInfo
+                rut={empresa.rut}
+                documento={{ idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }}
+                direccion={direccion}
+                rutExterno={direccion === "RECIBIDO" ? rutExterno : undefined}
+              />
+            </>
+          )}
         </>
       )}
     </Show>
