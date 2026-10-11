@@ -33,7 +33,15 @@ Al publicar en un subdirectorio, configurar `base` en `vite.config.ts` y un fall
 - `src/contexts/empresa.tsx`: empresa seleccionada en el encabezado; las pantallas usan su RUT.
 - `src/pages`: pantallas (comprobantes: listado y detalle con PDF; empresas: listado).
 
+## Solo lectura
+
+El panel no modifica datos. `src/api/http.ts` solo permite `GET` (y `POST /signin` para el login) y bloquea
+los `GET` de la API que tienen efectos:
+
+- `/empresa/:rut/documentos/resultado` y `/empresa/:rut/resultados/:fecha`: consultan DGI y actualizan estados
+- `/empresa/:rut/documentos/enviarCfeEmpresa` y `/empresa/:rut/sobre/enviarSobreEmpresa`: envían mails
+
 ## Pendiente
 
-- Sobres y respuestas DGI, CAE, emails recibidos (estado de carpetas IMAP), reporte diario.
-- Acciones: reenviar y anular comprobantes, reintentar emails.
+- Emails recibidos (estado de carpetas IMAP), reporte diario.
+- Sobres y CAE: requieren endpoints de listado (GET) en la API.

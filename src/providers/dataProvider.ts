@@ -45,8 +45,9 @@ function requireRut(meta: Record<string, unknown> | undefined): string {
   return rut;
 }
 
+/** El panel es de solo lectura: no se crean, modifican ni borran datos */
 const notSupported = (operation: string) => () => {
-  throw { message: `Operacion ${operation} no soportada todavia`, statusCode: 501 };
+  throw { message: `El panel es de solo lectura (${operation} no permitido)`, statusCode: 405 };
 };
 
 export const dataProvider: DataProvider = {
