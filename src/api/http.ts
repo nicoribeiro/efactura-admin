@@ -63,7 +63,24 @@ function verificarSoloLectura(method: string, path: string) {
     throw { message: `El panel es de solo lectura: ${method} ${path} no está permitido`, statusCode: 405 } as HttpError;
 }
 
-async function request(method: string, path: string, query?: QueryParams, body?: unknown): Promise<Response> {
+/** Tiempo maximo de espera de la API (incluye la descarga de la respuesta). Configurable con VITE_API_TIMEOUT_MS. */
+export const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 30_000;
+
+/** Codigos usados para errores sin respuesta HTTP */
+export const STATUS_TIMEOUT = 408;
+export const STATUS_SIN_CONEXION = 0;
+
+/**
+ * Hace el pedido y lee la respuesta con un tiempo maximo. Si la API no responde (servidor caido, sin memoria, red)
+ * se cancela y se devuelve un error claro en lugar de quedar esperando indefinidamente.
+ */
+async function request<T>(
+  method: string,
+  path: string,
+  query: QueryParams | undefined,
+  body: unknown,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
   verificarSoloLectura(method, path);
 
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -71,23 +88,44 @@ async function request(method: string, path: string, query?: QueryParams, body?:
   if (token) headers["AUTH-TOKEN"] = token;
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
-  const response = await fetch(buildUrl(path, query), {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
-  if (!response.ok) throw await toHttpError(response);
-  return response;
+  try {
+    const response = await fetch(buildUrl(path, query), {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) throw await toHttpError(response);
+    return await read(response);
+  } catch (error) {
+    if (controller.signal.aborted)
+      throw {
+        message: `La API no respondió en ${API_TIMEOUT_MS / 1000} segundos (${API_URL}). Puede estar caída o sobrecargada.`,
+        statusCode: STATUS_TIMEOUT,
+      } as HttpError;
+    // fetch rechaza con TypeError cuando no hay respuesta: servidor caido, red o CORS
+    if (error instanceof TypeError)
+      throw {
+        message: `No se pudo conectar con la API (${API_URL}). Verifique que el servidor esté levantado y accesible.`,
+        statusCode: STATUS_SIN_CONEXION,
+      } as HttpError;
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function apiJson<T>(method: string, path: string, query?: QueryParams, body?: unknown): Promise<T> {
-  const response = await request(method, path, query, body);
-  const text = await response.text();
-  return (text ? JSON.parse(text) : undefined) as T;
+  return request(method, path, query, body, async (response) => {
+    const text = await response.text();
+    return (text ? JSON.parse(text) : undefined) as T;
+  });
 }
 
 export async function apiBlob(path: string, query?: QueryParams): Promise<Blob> {
-  const response = await request("GET", path, query);
-  return response.blob();
+  return request("GET", path, query, undefined, (response) => response.blob());
 }

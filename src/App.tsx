@@ -8,6 +8,7 @@ import esES from "antd/locale/es_ES";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
+import { STATUS_TIMEOUT } from "./api/http";
 import { Header } from "./components/Header";
 import { EmpresaProvider } from "./contexts/empresa";
 import { DocumentoList } from "./pages/documentos/list";
@@ -47,7 +48,28 @@ export default function App() {
                 meta: { label: "Empresas", icon: <BankOutlined /> },
               },
             ]}
-            options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, disableTelemetry: true }}
+            options={{
+              syncWithLocation: false,
+              warnWhenUnsavedChanges: false,
+              disableTelemetry: true,
+              reactQuery: {
+                clientConfig: {
+                  defaultOptions: {
+                    queries: {
+                      // Sin respuesta de la API ya se esperaron API_TIMEOUT_MS: a lo sumo un reintento,
+                      // y ninguno para errores del cliente (4xx). Antes eran 3 reintentos (~2 min de spinner).
+                      retry: (failureCount, error) => {
+                        const status = (error as { statusCode?: number })?.statusCode;
+                        if (status !== undefined && status >= 400 && status < 500 && status !== STATUS_TIMEOUT)
+                          return false;
+                        return failureCount < 1;
+                      },
+                      refetchOnWindowFocus: false,
+                    },
+                  },
+                },
+              },
+            }}
           >
             <Routes>
               <Route
