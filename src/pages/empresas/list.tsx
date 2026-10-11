@@ -3,6 +3,7 @@ import { List, useTable } from "@refinedev/antd";
 import type { CrudFilters } from "@refinedev/core";
 import { Button, Card, Checkbox, Form, Input, Table, Tag } from "antd";
 import { useNavigate } from "react-router";
+import { estadoFirma } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
 
 interface FiltrosForm {
@@ -51,6 +52,13 @@ export function EmpresaList() {
           dataIndex="emisorElectronico"
           title="Emisor electrónico"
           render={(value: boolean) => (value ? <Tag color="green">Sí</Tag> : <Tag>No</Tag>)}
+        />
+        <Table.Column<Empresa>
+          title="Firma digital"
+          render={(_, empresa) => {
+            const estado = estadoFirma(empresa.firmaDigital);
+            return <Tag color={estado.color}>{estado.label}</Tag>;
+          }}
         />
         <Table.Column dataIndex="mailRecepcion" title="Mail recepción" />
         <Table.Column dataIndex="hostRecepcion" title="Servidor IMAP" />

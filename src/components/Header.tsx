@@ -1,7 +1,8 @@
-import { LogoutOutlined } from "@ant-design/icons";
+import { LogoutOutlined, WarningOutlined } from "@ant-design/icons";
 import { useGetIdentity, useLogout } from "@refinedev/core";
-import { Button, Layout, Select, Space, Typography } from "antd";
+import { Button, Layout, Select, Space, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useState } from "react";
+import { estadoFirma, formatFechaCorta } from "../constants/firma";
 import { useEmpresa } from "../contexts/empresa";
 
 export function Header() {
@@ -44,6 +45,13 @@ export function Header() {
           notFoundContent={loading ? "Buscando..." : "Sin resultados"}
           options={opciones.map((e) => ({ value: e.rut, label: `${e.rut} - ${e.razon ?? e.nombreComercial ?? ""}` }))}
         />
+        {empresa && estadoFirma(empresa.firmaDigital).alerta && (
+          <Tooltip title={`Firma digital válida hasta ${formatFechaCorta(empresa.firmaDigital?.validaHasta)}`}>
+            <Tag color={estadoFirma(empresa.firmaDigital).color}>
+              <WarningOutlined /> Firma: {estadoFirma(empresa.firmaDigital).label}
+            </Tag>
+          </Tooltip>
+        )}
       </Space>
       <Space>
         <Typography.Text>{identity?.name}</Typography.Text>

@@ -1,5 +1,6 @@
 import { useList, useOne } from "@refinedev/core";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { FirmaDigital } from "../constants/firma";
 
 export interface Empresa {
   id: number;
@@ -14,6 +15,7 @@ export interface Empresa {
   mailNotificaciones?: string;
   paginaWeb?: string;
   resolucion?: string;
+  firmaDigital?: FirmaDigital | null;
 }
 
 /** Version reducida que la API incluye dentro de CFE, sobres, CAE y reportes */

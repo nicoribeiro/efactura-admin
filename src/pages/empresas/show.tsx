@@ -2,6 +2,7 @@ import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
 import { Descriptions, Tabs, Tag } from "antd";
 import { useParams } from "react-router";
+import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
 import { EmailsTable } from "./emails";
@@ -38,6 +39,14 @@ export function EmpresaShow() {
                     {empresa.hostRecepcion ? `${empresa.hostRecepcion}:${empresa.puertoRecepcion ?? ""}` : "-"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Usuario IMAP">{empresa.userRecepcion}</Descriptions.Item>
+                  <Descriptions.Item label="Firma digital">
+                    <Tag color={estadoFirma(empresa.firmaDigital).color}>{estadoFirma(empresa.firmaDigital).label}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Validez de la firma">
+                    {empresa.firmaDigital
+                      ? `${formatFechaCorta(empresa.firmaDigital.validaDesde)} al ${formatFechaCorta(empresa.firmaDigital.validaHasta)}`
+                      : "-"}
+                  </Descriptions.Item>
                 </Descriptions>
               ),
             },
