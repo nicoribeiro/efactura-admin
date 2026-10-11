@@ -1,0 +1,93 @@
+import { BankOutlined, FileTextOutlined } from "@ant-design/icons";
+import { AuthPage, ErrorComponent, ThemedLayout, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
+import "@refinedev/antd/dist/reset.css";
+import { Authenticated, Refine } from "@refinedev/core";
+import routerProvider, { CatchAllNavigate, DocumentTitleHandler, NavigateToResource } from "@refinedev/react-router";
+import { App as AntdApp, ConfigProvider } from "antd";
+import esES from "antd/locale/es_ES";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router";
+import { Header } from "./components/Header";
+import { EmpresaProvider } from "./contexts/empresa";
+import { DocumentoList } from "./pages/documentos/list";
+import { DocumentoShow } from "./pages/documentos/show";
+import { EmpresaList } from "./pages/empresas/list";
+import { authProvider } from "./providers/authProvider";
+import { dataProvider } from "./providers/dataProvider";
+import { i18nProvider } from "./providers/i18nProvider";
+
+dayjs.locale("es");
+
+const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="efactura" />;
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ConfigProvider locale={esES}>
+        <AntdApp>
+          <Refine
+            dataProvider={dataProvider}
+            authProvider={authProvider}
+            i18nProvider={i18nProvider}
+            routerProvider={routerProvider}
+            notificationProvider={useNotificationProvider}
+            resources={[
+              {
+                name: "documentos",
+                list: "/documentos",
+                show: "/documentos/show/:id",
+                meta: { label: "Comprobantes", icon: <FileTextOutlined /> },
+              },
+              { name: "empresas", list: "/empresas", meta: { label: "Empresas", icon: <BankOutlined /> } },
+            ]}
+            options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, disableTelemetry: true }}
+          >
+            <Routes>
+              <Route
+                element={
+                  <Authenticated key="app" fallback={<CatchAllNavigate to="/login" />}>
+                    <EmpresaProvider>
+                      <ThemedLayout Header={Header} Title={Title}>
+                        <Outlet />
+                      </ThemedLayout>
+                    </EmpresaProvider>
+                  </Authenticated>
+                }
+              >
+                <Route index element={<NavigateToResource resource="documentos" />} />
+                <Route path="/documentos">
+                  <Route index element={<DocumentoList />} />
+                  <Route path="show/:id" element={<DocumentoShow />} />
+                </Route>
+                <Route path="/empresas" element={<EmpresaList />} />
+                <Route path="*" element={<ErrorComponent />} />
+              </Route>
+              <Route
+                element={
+                  <Authenticated key="auth" fallback={<Outlet />}>
+                    <NavigateToResource resource="documentos" />
+                  </Authenticated>
+                }
+              >
+                <Route
+                  path="/login"
+                  element={
+                    <AuthPage
+                      type="login"
+                      title={<ThemedTitle collapsed={false} text="efactura" />}
+                      registerLink={false}
+                      forgotPasswordLink={false}
+                      rememberMe={false}
+                    />
+                  }
+                />
+              </Route>
+            </Routes>
+            <DocumentTitleHandler handler={() => "efactura"} />
+          </Refine>
+        </AntdApp>
+      </ConfigProvider>
+    </BrowserRouter>
+  );
+}
