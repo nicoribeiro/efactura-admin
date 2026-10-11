@@ -1,12 +1,20 @@
 import { LogoutOutlined } from "@ant-design/icons";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { Button, Layout, Select, Space, Typography } from "antd";
+import { useEffect, useState } from "react";
 import { useEmpresa } from "../contexts/empresa";
 
 export function Header() {
-  const { empresas, empresa, setRut, loading } = useEmpresa();
+  const { opciones, empresa, setRut, buscar, loading } = useEmpresa();
   const { data: identity } = useGetIdentity<{ name: string }>();
   const { mutate: logout } = useLogout();
+  const [texto, setTexto] = useState("");
+
+  // Busqueda en el servidor con un pequeño retardo para no consultar en cada tecla
+  useEffect(() => {
+    const timer = setTimeout(() => buscar(texto), 300);
+    return () => clearTimeout(timer);
+  }, [texto, buscar]);
 
   return (
     <Layout.Header
@@ -22,13 +30,19 @@ export function Header() {
       <Space>
         <Typography.Text type="secondary">Empresa</Typography.Text>
         <Select
-          style={{ minWidth: 320 }}
+          style={{ minWidth: 360 }}
           loading={loading}
           value={empresa?.rut}
-          onChange={setRut}
+          onChange={(rut: string) => {
+            setTexto("");
+            setRut(rut);
+          }}
           showSearch
-          optionFilterProp="label"
-          options={empresas.map((e) => ({ value: e.rut, label: `${e.rut} - ${e.razon ?? e.nombreComercial ?? ""}` }))}
+          filterOption={false}
+          onSearch={setTexto}
+          placeholder="Buscar por RUT o razón social"
+          notFoundContent={loading ? "Buscando..." : "Sin resultados"}
+          options={opciones.map((e) => ({ value: e.rut, label: `${e.rut} - ${e.razon ?? e.nombreComercial ?? ""}` }))}
         />
       </Space>
       <Space>

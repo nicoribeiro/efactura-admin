@@ -1,12 +1,44 @@
+import { SearchOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
-import { Table, Tag } from "antd";
+import type { CrudFilters } from "@refinedev/core";
+import { Button, Card, Checkbox, Form, Input, Table, Tag } from "antd";
 import type { Empresa } from "../../contexts/empresa";
 
+interface FiltrosForm {
+  q?: string;
+  conFirma?: boolean;
+}
+
 export function EmpresaList() {
-  const { tableProps } = useTable<Empresa>({ resource: "empresas", syncWithLocation: false });
+  const { tableProps, searchFormProps } = useTable<Empresa, never, FiltrosForm>({
+    resource: "empresas",
+    syncWithLocation: false,
+    pagination: { pageSize: 20 },
+    filters: { initial: [{ field: "conFirma", operator: "eq", value: "true" }] },
+    onSearch: (values): CrudFilters => [
+      { field: "q", operator: "eq", value: values.q?.trim() || undefined },
+      { field: "conFirma", operator: "eq", value: values.conFirma ? "true" : undefined },
+    ],
+  });
 
   return (
     <List title="Empresas">
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Form {...searchFormProps} layout="inline" initialValues={{ conFirma: true }}>
+          <Form.Item name="q" label="Buscar">
+            <Input allowClear placeholder="RUT, razón social o nombre comercial" style={{ width: 300 }} />
+          </Form.Item>
+          <Form.Item name="conFirma" valuePropName="checked">
+            <Checkbox>Solo con firma digital</Checkbox>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+              Buscar
+            </Button>
+          </Form.Item>
+        </Form>
+      </Card>
+
       <Table {...tableProps} rowKey="rut" size="middle">
         <Table.Column dataIndex="rut" title="RUT" />
         <Table.Column dataIndex="razon" title="Razón social" />

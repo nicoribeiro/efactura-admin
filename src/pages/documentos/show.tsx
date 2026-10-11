@@ -5,7 +5,7 @@ import { Button, Descriptions, Table, Tag, Typography } from "antd";
 import { useParams, useSearchParams } from "react-router";
 import { ESTADOS_CFE, formatFechaApi, tipoDocByName } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
-import type { Documento } from "./list";
+import { etiquetaEmpresa, type Documento } from "./list";
 import { abrirPdf } from "./pdf";
 
 interface DocumentoDetalle extends Documento {
@@ -29,7 +29,7 @@ const monto = (value?: number) =>
 export function DocumentoShow() {
   const { id = "" } = useParams();
   const [searchParams] = useSearchParams();
-  const { empresa, empresaById } = useEmpresa();
+  const { empresa } = useEmpresa();
   const { open } = useNotification();
 
   const direccion = searchParams.get("direccion") ?? "EMITIDO";
@@ -57,8 +57,6 @@ export function DocumentoShow() {
     }
   };
 
-  const emisor = empresaById(doc?.empresaEmisora?.id);
-  const receptor = empresaById(doc?.empresaReceptora?.id);
   const detalle = doc?.detalle ?? [];
 
   return (
@@ -78,9 +76,9 @@ export function DocumentoShow() {
             <Descriptions.Item label="Serie / Nro">{`${doc.serie}-${doc.nro}`}</Descriptions.Item>
             <Descriptions.Item label="Fecha emisión">{formatFechaApi(doc.fechaEmision)}</Descriptions.Item>
             <Descriptions.Item label="Fecha generación">{formatFechaApi(doc.fechaGeneracion)}</Descriptions.Item>
-            <Descriptions.Item label="Emisor">{emisor ? `${emisor.rut} - ${emisor.razon ?? ""}` : "-"}</Descriptions.Item>
+            <Descriptions.Item label="Emisor">{etiquetaEmpresa(doc.empresaEmisora) ?? "-"}</Descriptions.Item>
             <Descriptions.Item label="Receptor">
-              {receptor ? `${receptor.rut} - ${receptor.razon ?? ""}` : doc.titular?.documento ?? "-"}
+              {etiquetaEmpresa(doc.empresaReceptora) ?? doc.titular?.documento ?? "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Moneda">{doc.moneda}</Descriptions.Item>
             <Descriptions.Item label="Tipo de cambio">{doc.tipoCambio ?? "-"}</Descriptions.Item>

@@ -1,4 +1,4 @@
-import { useList } from "@refinedev/core";
+import { useList, useOne } from "@refinedev/core";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export interface Empresa {
@@ -16,13 +16,21 @@ export interface Empresa {
   resolucion?: string;
 }
 
+/** Version reducida que la API incluye dentro de CFE, sobres, CAE y reportes */
+export interface EmpresaRef {
+  id: number;
+  rut?: string;
+  razon?: string;
+}
+
 interface EmpresaContextValue {
-  empresas: Empresa[];
+  /** Empresa seleccionada en el encabezado */
   empresa?: Empresa;
   setRut: (rut: string) => void;
+  /** Opciones del selector: empresas con firma digital, o el resultado de la busqueda */
+  opciones: Empresa[];
+  buscar: (texto: string) => void;
   loading: boolean;
-  /** La API serializa empresaEmisora/empresaReceptora de un CFE solo con su id */
-  empresaById: (id?: number) => Empresa | undefined;
 }
 
 const EmpresaContext = createContext<EmpresaContextValue | undefined>(undefined);
@@ -30,34 +38,48 @@ const EmpresaContext = createContext<EmpresaContextValue | undefined>(undefined)
 const RUT_KEY = "efactura-empresa-rut";
 
 export function EmpresaProvider({ children }: { children: ReactNode }) {
-  const { result, query } = useList<Empresa>({ resource: "empresas", pagination: { mode: "off" } });
-  const empresas = useMemo(() => result?.data ?? [], [result]);
   const [rut, setRutState] = useState<string | null>(() => localStorage.getItem(RUT_KEY));
+  const [busqueda, setBusqueda] = useState("");
+
+  // Sin busqueda: las empresas con firma digital (las que se gestionan con el sistema). Con busqueda: todas.
+  const { result: lista, query: listaQuery } = useList<Empresa>({
+    resource: "empresas",
+    pagination: { currentPage: 1, pageSize: 50 },
+    filters: busqueda
+      ? [{ field: "q", operator: "eq", value: busqueda }]
+      : [{ field: "conFirma", operator: "eq", value: "true" }],
+  });
+
+  const { result: seleccionada, query: seleccionadaQuery } = useOne<Empresa>({
+    resource: "empresas",
+    id: rut ?? "",
+    queryOptions: { enabled: !!rut },
+  });
 
   const setRut = (value: string) => {
     localStorage.setItem(RUT_KEY, value);
     setRutState(value);
+    setBusqueda("");
   };
 
-  // Si no hay empresa elegida (o ya no existe), se toma la primera emisora electronica
+  // Si no hay empresa elegida se toma la primera con firma digital
   useEffect(() => {
-    if (empresas.length === 0) return;
-    if (!rut || !empresas.some((e) => e.rut === rut)) {
-      const inicial = empresas.find((e) => e.emisorElectronico) ?? empresas[0];
-      setRut(inicial.rut);
-    }
-  }, [empresas, rut]);
+    if (!rut && !busqueda && lista?.data?.length) setRut(lista.data[0].rut);
+  }, [rut, busqueda, lista]);
 
-  const value = useMemo<EmpresaContextValue>(
-    () => ({
-      empresas,
-      empresa: empresas.find((e) => e.rut === rut),
-      setRut,
-      loading: query.isLoading,
-      empresaById: (id?: number) => empresas.find((e) => e.id === id),
-    }),
-    [empresas, rut, query.isLoading],
-  );
+  const opciones = useMemo(() => {
+    const data = lista?.data ?? [];
+    // La seleccionada siempre aparece en las opciones, aunque no tenga firma o no coincida con la busqueda
+    return seleccionada && !data.some((e) => e.rut === seleccionada.rut) ? [seleccionada, ...data] : data;
+  }, [lista, seleccionada]);
+
+  const value: EmpresaContextValue = {
+    empresa: seleccionada,
+    setRut,
+    opciones,
+    buscar: setBusqueda,
+    loading: listaQuery.isLoading || seleccionadaQuery.isLoading,
+  };
 
   return <EmpresaContext.Provider value={value}>{children}</EmpresaContext.Provider>;
 }

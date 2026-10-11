@@ -5,7 +5,7 @@ import { Button, Card, DatePicker, Form, Input, InputNumber, Segmented, Select, 
 import type { Dayjs } from "dayjs";
 import { useNavigate } from "react-router";
 import { ESTADOS_CFE, TIPOS_DOC, formatFechaApi, tipoDocByName, type Direccion } from "../../constants/cfe";
-import { useEmpresa, type Empresa } from "../../contexts/empresa";
+import { useEmpresa, type EmpresaRef } from "../../contexts/empresa";
 import { documentoId } from "../../providers/dataProvider";
 import { abrirPdf } from "./pdf";
 
@@ -19,8 +19,8 @@ export interface Documento {
   totMntTotal?: number;
   estado?: string | null;
   titular?: { documento?: string; tipoDocumento?: string } | null;
-  empresaEmisora?: { id: number } | null;
-  empresaReceptora?: { id: number } | null;
+  empresaEmisora?: EmpresaRef | null;
+  empresaReceptora?: EmpresaRef | null;
 }
 
 interface FiltrosForm {
@@ -33,10 +33,11 @@ interface FiltrosForm {
   razonReceptor?: string;
 }
 
-const etiquetaEmpresa = (empresa?: Empresa) => (empresa ? `${empresa.rut} - ${empresa.razon ?? ""}` : undefined);
+export const etiquetaEmpresa = (empresa?: EmpresaRef | null) =>
+  empresa?.rut ? `${empresa.rut} - ${empresa.razon ?? ""}` : undefined;
 
 export function DocumentoList() {
-  const { empresa, empresaById } = useEmpresa();
+  const { empresa } = useEmpresa();
   const navigate = useNavigate();
   const { open } = useNotification();
 
@@ -69,15 +70,15 @@ export function DocumentoList() {
     const tipo = tipoDocByName(doc.tipo);
     if (!tipo) return;
     const params = new URLSearchParams({ direccion });
-    const emisor = empresaById(doc.empresaEmisora?.id);
-    if (direccion === "RECIBIDO" && emisor) params.set("rutExterno", emisor.rut);
+    const rutEmisor = doc.empresaEmisora?.rut;
+    if (direccion === "RECIBIDO" && rutEmisor) params.set("rutExterno", rutEmisor);
     navigate(`/documentos/show/${encodeURIComponent(documentoId(tipo.id, doc.serie, doc.nro))}?${params}`);
   };
 
   const pdf = async (doc: Documento) => {
     const tipo = tipoDocByName(doc.tipo);
     if (!tipo || !empresa) return;
-    const emisor = direccion === "RECIBIDO" ? empresaById(doc.empresaEmisora?.id)?.rut : undefined;
+    const emisor = direccion === "RECIBIDO" ? doc.empresaEmisora?.rut : undefined;
     try {
       await abrirPdf(empresa.rut, { idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }, emisor);
     } catch (error) {
@@ -144,8 +145,8 @@ export function DocumentoList() {
           title={direccion === "EMITIDO" ? "Receptor" : "Emisor"}
           render={(_, doc) =>
             direccion === "EMITIDO"
-              ? etiquetaEmpresa(empresaById(doc.empresaReceptora?.id)) ?? doc.titular?.documento ?? "-"
-              : etiquetaEmpresa(empresaById(doc.empresaEmisora?.id)) ?? "-"
+              ? etiquetaEmpresa(doc.empresaReceptora) ?? doc.titular?.documento ?? "-"
+              : etiquetaEmpresa(doc.empresaEmisora) ?? "-"
           }
         />
         <Table.Column<Documento> title="Moneda" dataIndex="moneda" />

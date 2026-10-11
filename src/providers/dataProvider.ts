@@ -9,8 +9,9 @@ interface ObjectList<T> {
   pageSize: number;
 }
 
-/** La API limita pageSize a 50 en /documentos */
+/** La API limita pageSize a 50 en /documentos y a 100 en /empresa */
 const MAX_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE_EMPRESAS = 100;
 
 /**
  * Id compuesto de un documento: la API no tiene endpoint por id interno, se identifica por tipo, serie y numero.
@@ -57,11 +58,12 @@ export const dataProvider: DataProvider = {
 
     switch (resource) {
       case "empresas": {
-        // GET /empresa devuelve la lista completa: se pagina en el cliente
-        const empresas = await apiJson<BaseRecord[]>("GET", "/empresa");
-        if (pagination?.mode === "off") return { data: empresas as TData[], total: empresas.length };
-        const start = (currentPage - 1) * pageSize;
-        return { data: empresas.slice(start, start + pageSize) as TData[], total: empresas.length };
+        // Paginado en la API (filtros: q, emisorElectronico, conFirma). Nunca se pide la lista completa:
+        // puede tener decenas de miles de empresas (lista de emisores de DGI).
+        const size = Math.min(pagination?.pageSize ?? 20, MAX_PAGE_SIZE_EMPRESAS);
+        const query = { ...filtersToQuery(filters), page: currentPage, pageSize: size };
+        const list = await apiJson<ObjectList<BaseRecord>>("GET", "/empresa", query);
+        return { data: list.results as TData[], total: list.count };
       }
 
       case "documentos": {
