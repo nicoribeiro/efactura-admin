@@ -30,14 +30,18 @@ function buildUrl(path: string, query?: QueryParams): string {
 
 async function toHttpError(response: Response): Promise<HttpError> {
   let body: ApiErrorBody | undefined;
+  let texto = "";
   try {
-    body = (await response.json()) as ApiErrorBody;
+    texto = await response.text();
+    body = JSON.parse(texto) as ApiErrorBody;
   } catch {
-    // respuesta sin cuerpo JSON
+    // respuesta sin cuerpo JSON: ej. el 401 de Secured es texto plano ("La sesion vencio, vuelva a ingresar")
   }
+  const textoPlano = !body && texto && texto.length < 300 && !texto.trimStart().startsWith("<") ? texto.trim() : "";
   const message =
     [body?.result_message, body?.result_detail].filter(Boolean).join(": ") ||
     body?.result_name ||
+    textoPlano ||
     `Error ${response.status}`;
   return { message, statusCode: response.status, errors: body ? { api: [JSON.stringify(body)] } : undefined };
 }

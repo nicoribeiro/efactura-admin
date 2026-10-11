@@ -7,6 +7,7 @@ import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
 import { EmailsTable } from "./emails";
 import { SucursalesTable } from "./sucursales";
+import { UsuariosTable } from "./usuarios";
 
 export function EmpresaShow() {
   const { id: rut = "" } = useParams();
@@ -64,6 +65,11 @@ export function EmpresaShow() {
               key: "emails",
               label: "Emails recibidos",
               children: <EmailsTable rut={empresa.rut} />,
+            },
+            {
+              key: "usuarios",
+              label: "Usuarios",
+              children: <UsuariosTable rut={empresa.rut} />,
             },
           ]}
         />

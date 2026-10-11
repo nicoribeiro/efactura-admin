@@ -83,6 +83,13 @@ export const dataProvider: DataProvider = {
         return { data: list.results as TData[], total: list.count };
       }
 
+      case "usuarios": {
+        // Usuarios con acceso a la empresa (solo ADMIN): la API devuelve la lista completa
+        const rut = requireRut(meta);
+        const usuarios = await apiJson<BaseRecord[]>("GET", `/empresa/${rut}/usuarios`);
+        return { data: usuarios as TData[], total: usuarios.length };
+      }
+
       case "sucursales": {
         // Sucursales de una empresa (pocas): la API devuelve la lista completa
         const rut = requireRut(meta);
