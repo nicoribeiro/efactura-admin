@@ -1,7 +1,8 @@
-import { SearchOutlined } from "@ant-design/icons";
+import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import type { CrudFilters } from "@refinedev/core";
 import { Button, Card, Checkbox, Form, Input, Table, Tag } from "antd";
+import { useNavigate } from "react-router";
 import type { Empresa } from "../../contexts/empresa";
 
 interface FiltrosForm {
@@ -10,6 +11,9 @@ interface FiltrosForm {
 }
 
 export function EmpresaList() {
+  const navigate = useNavigate();
+  const ver = (empresa: Empresa) => navigate(`/empresas/show/${encodeURIComponent(empresa.rut)}`);
+
   const { tableProps, searchFormProps } = useTable<Empresa, never, FiltrosForm>({
     resource: "empresas",
     syncWithLocation: false,
@@ -39,7 +43,7 @@ export function EmpresaList() {
         </Form>
       </Card>
 
-      <Table {...tableProps} rowKey="rut" size="middle">
+      <Table {...tableProps} rowKey="rut" size="middle" onRow={(empresa) => ({ onDoubleClick: () => ver(empresa) })}>
         <Table.Column dataIndex="rut" title="RUT" />
         <Table.Column dataIndex="razon" title="Razón social" />
         <Table.Column dataIndex="nombreComercial" title="Nombre comercial" />
@@ -50,6 +54,10 @@ export function EmpresaList() {
         />
         <Table.Column dataIndex="mailRecepcion" title="Mail recepción" />
         <Table.Column dataIndex="hostRecepcion" title="Servidor IMAP" />
+        <Table.Column<Empresa>
+          title=""
+          render={(_, empresa) => <Button size="small" icon={<EyeOutlined />} onClick={() => ver(empresa)} />}
+        />
       </Table>
     </List>
   );

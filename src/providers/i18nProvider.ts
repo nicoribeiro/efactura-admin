@@ -18,6 +18,12 @@ const es: Record<string, string> = {
   "buttons.logout": "Salir",
   "notifications.error": "Error (código: {{statusCode}})",
   "warnWhenUnsavedChanges": "¿Seguro que quiere salir? Hay cambios sin guardar.",
+  "empresas.titles.list": "Empresas",
+  "empresas.titles.show": "Empresa",
+  "documentos.titles.list": "Comprobantes",
+  "documentos.titles.show": "Comprobante",
+  "actions.list": "Listado",
+  "actions.show": "Ver",
 };
 
 export const i18nProvider: I18nProvider = {

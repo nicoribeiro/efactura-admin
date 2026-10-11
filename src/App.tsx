@@ -13,6 +13,7 @@ import { EmpresaProvider } from "./contexts/empresa";
 import { DocumentoList } from "./pages/documentos/list";
 import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
+import { EmpresaShow } from "./pages/empresas/show";
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
 import { i18nProvider } from "./providers/i18nProvider";
@@ -39,7 +40,12 @@ export default function App() {
                 show: "/documentos/show/:id",
                 meta: { label: "Comprobantes", icon: <FileTextOutlined /> },
               },
-              { name: "empresas", list: "/empresas", meta: { label: "Empresas", icon: <BankOutlined /> } },
+              {
+                name: "empresas",
+                list: "/empresas",
+                show: "/empresas/show/:id",
+                meta: { label: "Empresas", icon: <BankOutlined /> },
+              },
             ]}
             options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, disableTelemetry: true }}
           >
@@ -60,7 +66,10 @@ export default function App() {
                   <Route index element={<DocumentoList />} />
                   <Route path="show/:id" element={<DocumentoShow />} />
                 </Route>
-                <Route path="/empresas" element={<EmpresaList />} />
+                <Route path="/empresas">
+                  <Route index element={<EmpresaList />} />
+                  <Route path="show/:id" element={<EmpresaShow />} />
+                </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>
               <Route

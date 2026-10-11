@@ -74,6 +74,13 @@ export const dataProvider: DataProvider = {
         return { data: list.results as TData[], total: list.count };
       }
 
+      case "caes": {
+        // CAEs de una empresa (pocos): la API devuelve la lista completa
+        const rut = requireRut(meta);
+        const caes = await apiJson<BaseRecord[]>("GET", `/empresa/${rut}/cae`);
+        return { data: caes as TData[], total: caes.length };
+      }
+
       default:
         throw { message: `Recurso desconocido: ${resource}`, statusCode: 404 };
     }
