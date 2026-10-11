@@ -122,7 +122,18 @@ async function request<T>(
 export async function apiJson<T>(method: string, path: string, query?: QueryParams, body?: unknown): Promise<T> {
   return request(method, path, query, body, async (response) => {
     const text = await response.text();
-    return (text ? JSON.parse(text) : undefined) as T;
+    const data = text ? JSON.parse(text) : undefined;
+    // La API devuelve la mayoria de sus errores (APIException) con HTTP 200 y {result_code, result_message, ...}.
+    // result_code 0 es OK.
+    if (data && typeof data === "object" && !Array.isArray(data) && typeof data.result_code === "number" && data.result_code !== 0) {
+      const body = data as ApiErrorBody;
+      throw {
+        message: [body.result_message, body.result_detail].filter(Boolean).join(": ") || body.result_name || "Error de la API",
+        statusCode: response.status,
+        errors: { api: [text] },
+      } as HttpError;
+    }
+    return data as T;
   });
 }
 
