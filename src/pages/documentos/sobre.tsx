@@ -1,29 +1,24 @@
-import { Alert, Collapse, Descriptions, Empty, Skeleton, Tag } from "antd";
+import { Alert, Collapse, Descriptions, Empty, Skeleton } from "antd";
+import { Link } from "react-router";
 import { formatFechaApi } from "../../constants/cfe";
 import { XmlCode } from "../../components/XmlCode";
+import { EstadoSobreTag } from "../sobres/componentes";
 import type { EstadoSobre } from "./useSobre";
-
-/** Estados de un sobre (EstadoACKSobreType) */
-const ESTADOS_SOBRE: Record<string, { label: string; color: string }> = {
-  AS: { label: "Recibido", color: "green" },
-  BS: { label: "Rechazado", color: "red" },
-  BA: { label: "BA", color: "orange" },
-};
-
-const tagEstado = (estado?: string | null, sinValor = "Sin respuesta") =>
-  estado ? (
-    <Tag color={ESTADOS_SOBRE[estado]?.color}>
-      {ESTADOS_SOBRE[estado]?.label ?? estado} ({estado})
-    </Tag>
-  ) : (
-    <Tag>{sinValor}</Tag>
-  );
 
 /** Indentado y coloreado; "copiar" copia el XML original (esta firmado: cambiar espacios invalida la firma) */
 const xml = (contenido?: string | null) => <XmlCode xml={contenido ?? ""} />;
 
-/** Sobre en el que viajo el comprobante (solo lectura); los datos los carga el detalle con useSobreDocumento */
-export function SobreDocumentoInfo({ estado }: { estado: EstadoSobre }) {
+/**
+ * Sobre en el que viajo el comprobante (solo lectura); los datos los carga el detalle con useSobreDocumento.
+ * Con enlazar (por defecto) muestra un link a la pagina del sobre.
+ */
+export function SobreDocumentoInfo({
+  estado,
+  enlazar = true,
+}: {
+  estado: EstadoSobre;
+  enlazar?: boolean;
+}) {
   const { data, error, loading } = estado;
 
   if (loading) return <Skeleton active paragraph={{ rows: 3 }} />;
@@ -84,6 +79,14 @@ export function SobreDocumentoInfo({ estado }: { estado: EstadoSobre }) {
       <Descriptions bordered size="small" column={2}>
         <Descriptions.Item label="Archivo" span={2}>
           {sobre.nombreArchivo ?? "-"}
+          {enlazar && (
+            <>
+              {" · "}
+              <Link to={`/sobres/show/${sobre.id}`}>
+                Ver sobre y sus comprobantes
+              </Link>
+            </>
+          )}
         </Descriptions.Item>
         <Descriptions.Item label="Fecha">
           {formatFechaApi(sobre.fecha) || "-"}
@@ -100,7 +103,7 @@ export function SobreDocumentoInfo({ estado }: { estado: EstadoSobre }) {
         {emitido && (
           <>
             <Descriptions.Item label="Estado DGI">
-              {tagEstado(sobre.estadoDgi)}
+              <EstadoSobreTag estado={sobre.estadoDgi} />
             </Descriptions.Item>
             <Descriptions.Item label="Última consulta a DGI">
               {formatFechaApi(sobre.fechaConsulta) || "-"}
@@ -124,7 +127,7 @@ export function SobreDocumentoInfo({ estado }: { estado: EstadoSobre }) {
               : "Estado de nuestra respuesta"
           }
         >
-          {tagEstado(sobre.estadoEmpresa)}
+          <EstadoSobreTag estado={sobre.estadoEmpresa} />
         </Descriptions.Item>
         <Descriptions.Item label="Motivo">
           {sobre.motivo || "-"}

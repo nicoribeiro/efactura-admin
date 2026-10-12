@@ -3,6 +3,7 @@ import {
   CalendarOutlined,
   DashboardOutlined,
   FileTextOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import {
   AuthPage,
@@ -33,6 +34,8 @@ import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
 import { ReporteDiarioList } from "./pages/reportes/list";
 import { EmpresaShow } from "./pages/empresas/show";
+import { SobreList } from "./pages/sobres/list";
+import { SobreShow } from "./pages/sobres/show";
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
 import { i18nProvider } from "./providers/i18nProvider";
@@ -65,6 +68,12 @@ export default function App() {
                 list: "/documentos",
                 show: "/documentos/show/:id",
                 meta: { label: "Comprobantes", icon: <FileTextOutlined /> },
+              },
+              {
+                name: "sobres",
+                list: "/sobres",
+                show: "/sobres/show/:id",
+                meta: { label: "Sobres", icon: <InboxOutlined /> },
               },
               {
                 name: "reportes",
@@ -134,6 +143,10 @@ export default function App() {
                 <Route path="/documentos">
                   <Route index element={<DocumentoList />} />
                   <Route path="show/:id" element={<DocumentoShow />} />
+                </Route>
+                <Route path="/sobres">
+                  <Route index element={<SobreList />} />
+                  <Route path="show/:id" element={<SobreShow />} />
                 </Route>
                 <Route path="/reportes" element={<ReporteDiarioList />} />
                 <Route path="/empresas">

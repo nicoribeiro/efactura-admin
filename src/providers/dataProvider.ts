@@ -104,6 +104,14 @@ export const dataProvider: DataProvider = {
         return { data: caes as TData[], total: caes.length };
       }
 
+      case "sobres": {
+        // Sobres emitidos o recibidos (paginado en la API, maximo 50), con sus comprobantes resumidos
+        const rut = requireRut(meta);
+        const query = { ...filtersToQuery(filters), page: currentPage, pageSize };
+        const list = await apiJson<ObjectList<BaseRecord>>("GET", `/empresa/${rut}/sobres`, query);
+        return { data: list.results as TData[], total: list.count };
+      }
+
       default:
         throw { message: `Recurso desconocido: ${resource}`, statusCode: 404 };
     }
@@ -125,6 +133,12 @@ export const dataProvider: DataProvider = {
           rutExterno: meta?.rutExterno as string | undefined,
         });
         return { data: list.results[0] };
+      }
+
+      case "sobres": {
+        // Detalle del sobre (con XML y sus comprobantes); la API verifica que sea de la empresa
+        const rut = requireRut(meta);
+        return { data: await apiJson<TData>("GET", `/empresa/${rut}/sobre`, { idSobre: String(id) }) };
       }
 
       default:
