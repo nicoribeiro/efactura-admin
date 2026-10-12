@@ -27,6 +27,7 @@ import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
 import { CarpetasImap } from "./carpetas";
+import { ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
 
 type EstadoAdjunto =
   "PROCESADO_OK" | "PROCESADO_ERROR" | "PENDIENTE" | "OMITIDO";
@@ -144,7 +145,7 @@ function DescargarAdjunto({
   );
 }
 
-/** Emails recibidos por una empresa (solo lectura) */
+/** Emails recibidos por una empresa; se pueden reintentar los que tienen adjuntos con error o pendientes */
 export function EmailsTable({ rut }: { rut: string }) {
   // ?estado=PROCESADO_ERROR (link de "Atención" en el tablero)
   const [params] = useSearchParams();
@@ -242,12 +243,19 @@ export function EmailsTable({ rut }: { rut: string }) {
             Buscar
           </Button>
         </Form.Item>
+        <Form.Item>
+          <ReintentarTodos rut={rut} onTerminado={() => tableQuery.refetch()} />
+        </Form.Item>
       </Form>
 
       <Table<EmailRecibido>
         {...tableProps}
         rowKey="id"
         size="middle"
+        // Ancho fijo por columna: remitente y asunto se recortan con "…" para que estado y acciones queden a la vista;
+        // en pantallas angostas la tabla se desplaza horizontalmente
+        tableLayout="fixed"
+        scroll={{ x: 760 }}
         expandable={{
           rowExpandable: (email) => email.attachments.length > 0,
           expandedRowRender: (email) => (
@@ -331,20 +339,22 @@ export function EmailsTable({ rut }: { rut: string }) {
         <Table.Column<EmailRecibido>
           title="Fecha"
           dataIndex="sentDate"
+          width={170}
           render={formatFechaApi}
         />
         <Table.Column<EmailRecibido>
           title="Remitente"
           dataIndex="from"
-          ellipsis
+          ellipsis={{ showTitle: true }}
         />
         <Table.Column<EmailRecibido>
           title="Asunto"
           dataIndex="subject"
-          ellipsis
+          ellipsis={{ showTitle: true }}
         />
         <Table.Column<EmailRecibido>
           title="Adjuntos"
+          width={95}
           render={(_, email) => (
             <Space size={4}>
               <PaperClipOutlined />
@@ -354,6 +364,7 @@ export function EmailsTable({ rut }: { rut: string }) {
         />
         <Table.Column<EmailRecibido>
           title="Estado"
+          width={115}
           render={(_, email) => {
             // Con error: el mensaje del primer adjunto con error al pasar el mouse
             const error = email.attachments.find((a) => a.error)?.error;
@@ -363,6 +374,27 @@ export function EmailsTable({ rut }: { rut: string }) {
               tagEstado(estadoEmail(email))
             );
           }}
+        />
+        <Table.Column<EmailRecibido>
+          title=""
+          width={56}
+          render={(_, email) =>
+            email.attachments.some(
+              (a) => a.estado === "PROCESADO_ERROR" || a.estado === "PENDIENTE",
+            ) ? (
+              <ReintentarEmail
+                rut={rut}
+                emailId={email.id}
+                conSobre={email.attachments.some(
+                  (a) =>
+                    /^Sob/i.test(a.name ?? "") &&
+                    (a.estado === "PROCESADO_ERROR" || a.estado === "PENDIENTE"),
+                )}
+                soloIcono
+                onTerminado={() => tableQuery.refetch()}
+              />
+            ) : null
+          }
         />
       </Table>
     </>

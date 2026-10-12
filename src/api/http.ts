@@ -50,7 +50,7 @@ async function toHttpError(response: Response): Promise<HttpError> {
 /**
  * El panel es de solo lectura salvo una lista explicita de escrituras: el login, la administracion de usuarios (solo
  * ADMIN en la API), los datos de la empresa y sus sucursales, la carga de CAE, el reporte diario, la consulta a DGI y el
- * reenvio por mail de un comprobante y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
+ * reenvio por mail de un comprobante, el reintento de los emails recibidos y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
  * GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails), salvo los de esta lista.
  */
 const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
@@ -73,6 +73,8 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "DELETE", path: /^\/empresa\/\d+\/sucursales\/\d+$/ },
   // Reporte diario a DGI (de a un dia)
   { method: "POST", path: /^\/empresa\/\d+\/reporteDiario\/\d{8}$/ },
+  // Reintento del procesamiento de un email recibido (PUT ?accion=RETRY)
+  { method: "PUT", path: /^\/empresa\/\d+\/emailEntrantes\/\d+$/ },
   // Reenvio por mail de un comprobante emitido (envia mails)
   { method: "POST", path: /^\/empresa\/\d+\/documentos\/reenviarMail$/ },
   // Consulta a DGI del resultado de un comprobante (GET con efecto: actualiza su estado)
