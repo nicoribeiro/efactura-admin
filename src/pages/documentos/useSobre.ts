@@ -1,0 +1,105 @@
+import { useEffect, useState } from "react";
+import { apiJson } from "../../api/http";
+
+export interface Respuesta {
+  id: number;
+  nombreArchivo?: string | null;
+  payload?: string | null;
+}
+
+/** SobreSerializer (version completa) */
+export interface Sobre {
+  id: number;
+  nombreArchivo?: string | null;
+  fecha?: string | null;
+  idEmisor?: number | null;
+  idReceptor?: number | null;
+  cantComprobantes?: number | null;
+  estadoEmpresa?: string | null;
+  motivo?: string | null;
+  xmlEmpresa?: string | null;
+  respuestaSobre?: Respuesta | null;
+  respuestaCfes?: Respuesta | null;
+  // Emitido
+  estadoDgi?: string | null;
+  fechaConsulta?: string | null;
+  xmlDgi?: string | null;
+  respuesta_dgi?: string | null;
+  resultado_dgi?: string | null;
+  // Recibido
+  timestampRecibido?: string | null;
+  timestampProcesado?: string | null;
+}
+
+export interface SobreDocumento {
+  direccion: "EMITIDO" | "RECIBIDO";
+  sobre: Sobre | null;
+}
+
+export interface DocumentoRef {
+  idTipoDoc: number;
+  serie: string;
+  nro: number;
+}
+
+export interface EstadoSobre {
+  data: SobreDocumento | null;
+  error: { message?: string; statusCode?: number } | null;
+  loading: boolean;
+}
+
+/** Sobre (emitido o recibido) en el que viajo un comprobante */
+export const obtenerSobreDocumento = (
+  rut: string,
+  documento: DocumentoRef,
+  direccion: string,
+  rutExterno?: string,
+) =>
+  apiJson<SobreDocumento>("GET", `/empresa/${rut}/documentos/sobre`, {
+    ...documento,
+    direccion,
+    rutExterno,
+  });
+
+/** Carga el sobre de un comprobante una vez, para compartirlo entre secciones del detalle */
+export function useSobreDocumento(
+  rut: string | undefined,
+  documento: DocumentoRef | undefined,
+  direccion: string,
+  rutExterno?: string,
+): EstadoSobre {
+  const [estado, setEstado] = useState<EstadoSobre>({
+    data: null,
+    error: null,
+    loading: true,
+  });
+  const idTipoDoc = documento?.idTipoDoc;
+  const serie = documento?.serie;
+  const nro = documento?.nro;
+
+  useEffect(() => {
+    if (
+      !rut ||
+      idTipoDoc === undefined ||
+      serie === undefined ||
+      nro === undefined
+    )
+      return;
+    let cancelado = false;
+    setEstado({ data: null, error: null, loading: true });
+    obtenerSobreDocumento(rut, { idTipoDoc, serie, nro }, direccion, rutExterno)
+      .then(
+        (data) =>
+          !cancelado && setEstado({ data, error: null, loading: false }),
+      )
+      .catch(
+        (error) =>
+          !cancelado && setEstado({ data: null, error, loading: false }),
+      );
+    return () => {
+      cancelado = true;
+    };
+  }, [rut, idTipoDoc, serie, nro, direccion, rutExterno]);
+
+  return estado;
+}

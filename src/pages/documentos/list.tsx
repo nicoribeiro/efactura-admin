@@ -1,12 +1,11 @@
 import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
-import { Button, Space, Table, Tag, Typography } from "antd";
+import { Button, Space, Table, Typography } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
-  ESTADOS_CFE,
   formatFechaApi,
   tipoDocByName,
   type Direccion,
@@ -16,6 +15,7 @@ import { documentoId } from "../../providers/dataProvider";
 import { rangoPorDefecto, type Rango } from "../../utils/rangos";
 import { FiltrosComprobantes } from "./filtros";
 import { abrirPdf } from "./pdf";
+import { EstadoDgiTag } from "./rechazo";
 
 /** Rango del formulario -> filtro: desde el inicio del primer dia hasta el final del ultimo */
 const aFiltroFecha = (fecha?: [Dayjs | null, Dayjs | null] | null) =>
@@ -222,15 +222,25 @@ export function DocumentoList() {
         <Table.Column<Documento>
           title="Estado DGI"
           dataIndex="estado"
-          render={(estado?: string | null) =>
-            estado ? (
-              <Tag color={ESTADOS_CFE[estado]?.color}>
-                {ESTADOS_CFE[estado]?.label ?? estado}
-              </Tag>
-            ) : (
-              <Tag>Sin respuesta</Tag>
-            )
-          }
+          render={(estado: string | null | undefined, doc) => {
+            // En rechazados/observados, el motivo de DGI al pasar el mouse
+            const tipo = tipoDocByName(doc.tipo);
+            return (
+              <EstadoDgiTag
+                estado={estado}
+                rut={empresa?.rut}
+                documento={
+                  tipo
+                    ? { idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }
+                    : undefined
+                }
+                direccion={direccion}
+                rutExterno={
+                  direccion === "RECIBIDO" ? doc.empresaEmisora?.rut : undefined
+                }
+              />
+            );
+          }}
         />
         <Table.Column<Documento>
           title=""

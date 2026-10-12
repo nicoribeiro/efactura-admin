@@ -3,11 +3,18 @@ import { Show } from "@refinedev/antd";
 import { useNotification, useOne } from "@refinedev/core";
 import { Button, Descriptions, Table, Tag, Typography } from "antd";
 import { useParams, useSearchParams } from "react-router";
-import { ESTADOS_CFE, formatFechaApi, tipoDocByName } from "../../constants/cfe";
+import {
+  ESTADOS_CFE,
+  formatFechaApi,
+  tipoDocByName,
+} from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
 import { etiquetaEmpresa, type Documento } from "./list";
 import { abrirPdf } from "./pdf";
+import { rechazoDgi } from "../../utils/dgi";
+import { RechazoDgiAlert } from "./rechazo";
 import { SobreDocumentoInfo } from "./sobre";
+import { useSobreDocumento } from "./useSobre";
 
 interface DocumentoDetalle extends Documento {
   fechaGeneracion?: string;
@@ -25,7 +32,12 @@ interface DocumentoDetalle extends Documento {
 }
 
 const monto = (value?: number) =>
-  value != null ? value.toLocaleString("es-UY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-";
+  value != null
+    ? value.toLocaleString("es-UY", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : "-";
 
 export function DocumentoShow() {
   const { id = "" } = useParams();
@@ -45,6 +57,19 @@ export function DocumentoShow() {
 
   const tipo = tipoDocByName(doc?.tipo);
 
+  // El sobre se carga una vez: lo usan el aviso de rechazo (arriba) y la seccion Sobre (abajo)
+  const referencia =
+    doc && tipo
+      ? { idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }
+      : undefined;
+  const sobre = useSobreDocumento(
+    empresa?.rut,
+    referencia,
+    direccion,
+    direccion === "RECIBIDO" ? rutExterno : undefined,
+  );
+  const rechazo = referencia ? rechazoDgi(sobre.data?.sobre, referencia) : null;
+
   const pdf = async () => {
     if (!doc || !tipo || !empresa) return;
     try {
@@ -54,7 +79,11 @@ export function DocumentoShow() {
         direccion === "RECIBIDO" ? rutExterno : undefined,
       );
     } catch (error) {
-      open?.({ type: "error", message: "No se pudo obtener el PDF", description: (error as Error).message });
+      open?.({
+        type: "error",
+        message: "No se pudo obtener el PDF",
+        description: (error as Error).message,
+      });
     }
   };
 
@@ -63,7 +92,11 @@ export function DocumentoShow() {
   return (
     <Show
       isLoading={query.isLoading}
-      title={doc ? `${tipo?.label ?? doc.tipo} ${doc.serie}-${doc.nro}` : "Comprobante"}
+      title={
+        doc
+          ? `${tipo?.label ?? doc.tipo} ${doc.serie}-${doc.nro}`
+          : "Comprobante"
+      }
       headerButtons={() => (
         <Button icon={<FilePdfOutlined />} onClick={pdf} disabled={!doc}>
           PDF
@@ -72,33 +105,60 @@ export function DocumentoShow() {
     >
       {doc && (
         <>
+          {rechazo && <RechazoDgiAlert rechazo={rechazo} />}
           <Descriptions bordered size="small" column={2}>
-            <Descriptions.Item label="Tipo">{tipo ? `${tipo.id} - ${tipo.label}` : doc.tipo}</Descriptions.Item>
+            <Descriptions.Item label="Tipo">
+              {tipo ? `${tipo.id} - ${tipo.label}` : doc.tipo}
+            </Descriptions.Item>
             <Descriptions.Item label="Serie / Nro">{`${doc.serie}-${doc.nro}`}</Descriptions.Item>
-            <Descriptions.Item label="Fecha emisión">{formatFechaApi(doc.fechaEmision)}</Descriptions.Item>
-            <Descriptions.Item label="Fecha generación">{formatFechaApi(doc.fechaGeneracion)}</Descriptions.Item>
-            <Descriptions.Item label="Emisor">{etiquetaEmpresa(doc.empresaEmisora) ?? "-"}</Descriptions.Item>
+            <Descriptions.Item label="Fecha emisión">
+              {formatFechaApi(doc.fechaEmision)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Fecha generación">
+              {formatFechaApi(doc.fechaGeneracion)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Emisor">
+              {etiquetaEmpresa(doc.empresaEmisora) ?? "-"}
+            </Descriptions.Item>
             <Descriptions.Item label="Receptor">
-              {etiquetaEmpresa(doc.empresaReceptora) ?? doc.titular?.documento ?? "-"}
+              {etiquetaEmpresa(doc.empresaReceptora) ??
+                doc.titular?.documento ??
+                "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Moneda">{doc.moneda}</Descriptions.Item>
-            <Descriptions.Item label="Tipo de cambio">{doc.tipoCambio ?? "-"}</Descriptions.Item>
-            <Descriptions.Item label="Neto no gravado">{monto(doc.totMntNoGrv)}</Descriptions.Item>
-            <Descriptions.Item label="Neto tasa mínima">{monto(doc.totMntIVATasaMin)}</Descriptions.Item>
-            <Descriptions.Item label="Neto tasa básica">{monto(doc.totMntIVATasaBas)}</Descriptions.Item>
-            <Descriptions.Item label="IVA tasa mínima">{monto(doc.mntIVATasaMin)}</Descriptions.Item>
-            <Descriptions.Item label="IVA tasa básica">{monto(doc.mntIVATasaBas)}</Descriptions.Item>
+            <Descriptions.Item label="Tipo de cambio">
+              {doc.tipoCambio ?? "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto no gravado">
+              {monto(doc.totMntNoGrv)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto tasa mínima">
+              {monto(doc.totMntIVATasaMin)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto tasa básica">
+              {monto(doc.totMntIVATasaBas)}
+            </Descriptions.Item>
+            <Descriptions.Item label="IVA tasa mínima">
+              {monto(doc.mntIVATasaMin)}
+            </Descriptions.Item>
+            <Descriptions.Item label="IVA tasa básica">
+              {monto(doc.mntIVATasaBas)}
+            </Descriptions.Item>
             <Descriptions.Item label="Total">
               <Typography.Text strong>{monto(doc.totMntTotal)}</Typography.Text>
             </Descriptions.Item>
             <Descriptions.Item label="Estado DGI">
               {doc.estado ? (
-                <Tag color={ESTADOS_CFE[doc.estado]?.color}>{ESTADOS_CFE[doc.estado]?.label ?? doc.estado}</Tag>
+                <Tag color={ESTADOS_CFE[doc.estado]?.color}>
+                  {ESTADOS_CFE[doc.estado]?.label ?? doc.estado}
+                </Tag>
               ) : (
                 <Tag>Sin respuesta</Tag>
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="Vencimiento">{formatFechaApi(doc.vencimiento) || "-"}</Descriptions.Item>
+            <Descriptions.Item label="Vencimiento">
+              {formatFechaApi(doc.vencimiento) || "-"}
+            </Descriptions.Item>
             {doc.adenda && (
               <Descriptions.Item label="Adenda" span={2}>
                 {doc.adenda}
@@ -109,13 +169,28 @@ export function DocumentoShow() {
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             Detalle
           </Typography.Title>
-          <Table dataSource={detalle} rowKey={(_, index) => String(index)} size="small" pagination={false}>
+          <Table
+            dataSource={detalle}
+            rowKey={(_, index) => String(index)}
+            size="small"
+            pagination={false}
+          >
             <Table.Column title="#" dataIndex="nroLinea" />
             <Table.Column title="Ítem" dataIndex="nombreItem" />
             <Table.Column title="Cantidad" dataIndex="cantidad" align="right" />
             <Table.Column title="Unidad" dataIndex="unidadMedida" />
-            <Table.Column title="Precio unitario" dataIndex="precioUnitario" align="right" render={monto} />
-            <Table.Column title="Monto" dataIndex="montoItem" align="right" render={monto} />
+            <Table.Column
+              title="Precio unitario"
+              dataIndex="precioUnitario"
+              align="right"
+              render={monto}
+            />
+            <Table.Column
+              title="Monto"
+              dataIndex="montoItem"
+              align="right"
+              render={monto}
+            />
           </Table>
 
           {empresa && tipo && (
@@ -123,12 +198,7 @@ export function DocumentoShow() {
               <Typography.Title level={5} style={{ marginTop: 24 }}>
                 Sobre
               </Typography.Title>
-              <SobreDocumentoInfo
-                rut={empresa.rut}
-                documento={{ idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }}
-                direccion={direccion}
-                rutExterno={direccion === "RECIBIDO" ? rutExterno : undefined}
-              />
+              <SobreDocumentoInfo estado={sobre} />
             </>
           )}
         </>
