@@ -105,7 +105,7 @@ export function SobreDocumentoInfo({
             <Descriptions.Item label="Estado DGI">
               <EstadoSobreTag estado={sobre.estadoDgi} />
             </Descriptions.Item>
-            <Descriptions.Item label="Última consulta a DGI">
+            <Descriptions.Item label="Respuesta de DGI desde">
               {formatFechaApi(sobre.fechaConsulta) || "-"}
             </Descriptions.Item>
           </>

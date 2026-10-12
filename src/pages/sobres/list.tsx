@@ -222,7 +222,7 @@ export function SobreList() {
               )}
             />
             <Table.Column<SobreResumen>
-              title="Última consulta"
+              title="Respuesta desde"
               dataIndex="fechaConsulta"
               render={formatFechaApi}
             />

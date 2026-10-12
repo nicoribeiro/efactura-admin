@@ -1,7 +1,8 @@
 import { FilePdfOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useNotification, useOne } from "@refinedev/core";
-import { Button, Descriptions, Table, Tag, Typography } from "antd";
+import { Button, Descriptions, Space, Table, Tag, Typography } from "antd";
+import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import {
   ESTADOS_CFE,
@@ -10,6 +11,7 @@ import {
 } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
 import { etiquetaEmpresa } from "./list";
+import { ConsultaDgi } from "./consultaDgi";
 import { abrirPdf } from "./pdf";
 import { rechazoDgi } from "../../utils/dgi";
 import { RechazoDgiAlert } from "./rechazo";
@@ -60,6 +62,8 @@ export function DocumentoShow() {
   });
 
   const tipo = tipoDocByName(doc?.tipo);
+  // Se incrementa cuando DGI responde, para recargar el sobre
+  const [recargaSobre, setRecargaSobre] = useState(0);
 
   // El sobre se carga una vez: lo usan el aviso de rechazo (arriba) y la seccion Sobre (abajo)
   const referencia =
@@ -71,6 +75,7 @@ export function DocumentoShow() {
     referencia,
     direccion,
     direccion === "RECIBIDO" ? rutExterno : undefined,
+    recargaSobre,
   );
   const rechazo = referencia ? rechazoDgi(sobre.data?.sobre, referencia) : null;
 
@@ -157,7 +162,20 @@ export function DocumentoShow() {
                   {ESTADOS_CFE[doc.estado]?.label ?? doc.estado}
                 </Tag>
               ) : (
-                <Tag>Sin respuesta</Tag>
+                <Space size={8} wrap>
+                  <Tag>Sin respuesta</Tag>
+                  {direccion === "EMITIDO" && empresa && referencia && (
+                    <ConsultaDgi
+                      rut={empresa.rut}
+                      documento={referencia}
+                      fechaConsulta={sobre.data?.sobre?.fechaConsulta}
+                      onRespuesta={() => {
+                        query.refetch();
+                        setRecargaSobre((n) => n + 1);
+                      }}
+                    />
+                  )}
+                </Space>
               )}
             </Descriptions.Item>
             <Descriptions.Item label="Vencimiento">

@@ -49,8 +49,9 @@ async function toHttpError(response: Response): Promise<HttpError> {
 
 /**
  * El panel es de solo lectura salvo una lista explicita de escrituras: el login, la administracion de usuarios (solo
- * ADMIN en la API) y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar
- * a la API. Ademas se bloquean los GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails).
+ * ADMIN en la API), la carga de CAE, el reporte diario, la consulta a DGI de un comprobante y el cambio de la
+ * contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
+ * GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails), salvo los de esta lista.
  */
 const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "POST", path: /^\/signin$/ },
@@ -67,6 +68,8 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "POST", path: /^\/empresa\/\d+\/cae$/ },
   // Reporte diario a DGI (de a un dia)
   { method: "POST", path: /^\/empresa\/\d+\/reporteDiario\/\d{8}$/ },
+  // Consulta a DGI del resultado de un comprobante (GET con efecto: actualiza su estado)
+  { method: "GET", path: /^\/empresa\/\d+\/documentos\/resultado$/ },
   // Contrasena propia
   { method: "PUT", path: /^\/cuenta\/password$/ },
 ];
@@ -80,11 +83,8 @@ const GET_CON_EFECTOS = [
 
 function verificarSoloLectura(method: string, path: string) {
   const permitido =
-    method === "GET"
-      ? !GET_CON_EFECTOS.some((re) => re.test(path))
-      : ESCRITURAS_PERMITIDAS.some(
-          (e) => e.method === method && e.path.test(path),
-        );
+    (method === "GET" && !GET_CON_EFECTOS.some((re) => re.test(path))) ||
+    ESCRITURAS_PERMITIDAS.some((e) => e.method === method && e.path.test(path));
   if (!permitido)
     throw {
       message: `El panel no permite ${method} ${path}`,

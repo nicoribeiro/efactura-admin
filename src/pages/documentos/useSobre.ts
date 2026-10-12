@@ -67,6 +67,8 @@ export function useSobreDocumento(
   documento: DocumentoRef | undefined,
   direccion: string,
   rutExterno?: string,
+  /** Cambiarlo vuelve a cargar el sobre */
+  recarga = 0,
 ): EstadoSobre {
   const [estado, setEstado] = useState<EstadoSobre>({
     data: null,
@@ -99,7 +101,7 @@ export function useSobreDocumento(
     return () => {
       cancelado = true;
     };
-  }, [rut, idTipoDoc, serie, nro, direccion, rutExterno]);
+  }, [rut, idTipoDoc, serie, nro, direccion, rutExterno, recarga]);
 
   return estado;
 }
