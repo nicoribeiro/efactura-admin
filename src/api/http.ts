@@ -21,7 +21,8 @@ interface ApiErrorBody {
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
 function buildUrl(path: string, query?: QueryParams): string {
-  const url = new URL(API_URL + path);
+  // API_URL puede ser relativa ("/api/v1") cuando el panel y la API se sirven desde el mismo origen
+  const url = new URL(API_URL + path, window.location.origin);
   if (query)
     for (const [key, value] of Object.entries(query))
       if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));

@@ -1,0 +1,55 @@
+# Config de Nginx del panel. La imagen oficial reemplaza ${API_UPSTREAM} al iniciar el contenedor
+# (solo las variables de entorno definidas; las de Nginx como $uri quedan intactas).
+
+server {
+    listen 80;
+    server_name _;
+    server_tokens off;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy same-origin always;
+
+    # API de java_efactura_uy (API_UPSTREAM, por defecto http://192.168.1.103:9000): se reenvia la ruta completa (/api/v1/...)
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # El panel corta a los 30 s (VITE_API_TIMEOUT_MS); margen para respuestas grandes
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 90s;
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Archivos generados por Vite: llevan hash en el nombre, se pueden cachear sin limite
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header X-Content-Type-Options nosniff always;
+        try_files $uri =404;
+    }
+
+    # Rutas del panel (React Router): cualquier otra URL devuelve index.html, que no se cachea
+    location / {
+        add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options DENY always;
+        add_header Referrer-Policy same-origin always;
+        try_files $uri /index.html;
+    }
+}

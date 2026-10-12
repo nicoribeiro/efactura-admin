@@ -1,0 +1,16 @@
+# Panel efactura-admin en http://<servidor>:${PANEL_PORT:-8080}
+#   docker compose up -d --build
+# Variables (en el entorno o en un archivo .env junto a este):
+#   PANEL_PORT    puerto publicado en el servidor (por defecto 8080; Podman sin root no permite < 1024)
+#   API_UPSTREAM  URL de la API, sin /api/v1 (por defecto http://192.168.1.103:9000)
+services:
+  efactura-admin:
+    build:
+      context: .
+    image: efactura-admin
+    container_name: efactura-admin
+    ports:
+      - "${PANEL_PORT:-8080}:80"
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://192.168.1.103:9000}
+    restart: unless-stopped
