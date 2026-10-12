@@ -1,6 +1,8 @@
 import { Collapse, Table, Typography } from "antd";
 import dayjs from "dayjs";
+import { theme } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTema } from "../../contexts/tema";
 
 export interface PuntoDia {
   fecha: string; // yyyy-MM-dd
@@ -8,13 +10,29 @@ export interface PuntoDia {
   recibidos: number;
 }
 
-/** Paleta categorica de referencia (slots 1 y 2), validada: CVD ΔE 24.7, vision normal 33.6, contraste >= 3:1 */
+/**
+ * Paleta categorica de referencia (slots 1 y 2) con sus pasos para cada tema, validada contra la superficie de las
+ * tarjetas: claro (#fff) CVD ΔE 24.7, vision normal 33.6; oscuro (#141414) CVD ΔE 26.8, vision normal 31.8;
+ * contraste >= 3:1 en ambos.
+ */
+const PALETAS = {
+  claro: {
+    series: { emitidos: "#2a78d6", recibidos: "#eb6834" },
+    texto: "#52514e",
+    grilla: "#e8e7e3",
+    resaltado: "#000",
+  },
+  oscuro: {
+    series: { emitidos: "#3987e5", recibidos: "#d95926" },
+    texto: "#c3c2b7",
+    grilla: "#383835",
+    resaltado: "#fff",
+  },
+};
 const SERIES = [
-  { clave: "emitidos" as const, label: "Emitidos", color: "#2a78d6" },
-  { clave: "recibidos" as const, label: "Recibidos", color: "#eb6834" },
+  { clave: "emitidos" as const, label: "Emitidos" },
+  { clave: "recibidos" as const, label: "Recibidos" },
 ];
-const TEXTO_SECUNDARIO = "#52514e";
-const GRILLA = "#e8e7e3";
 const ALTO = 220;
 const MARGEN = { arriba: 12, derecha: 12, abajo: 28, izquierda: 36 };
 
@@ -51,6 +69,11 @@ export function GraficoPorDia({
   const contenedor = useRef<HTMLDivElement>(null);
   const [ancho, setAncho] = useState(800);
   const [activo, setActivo] = useState<number | null>(null);
+  const { oscuro } = useTema();
+  const { token } = theme.useToken();
+  const paleta = PALETAS[oscuro ? "oscuro" : "claro"];
+  const TEXTO_SECUNDARIO = paleta.texto;
+  const GRILLA = paleta.grilla;
 
   useEffect(() => {
     const el = contenedor.current;
@@ -125,7 +148,7 @@ export function GraficoPorDia({
                 width: 10,
                 height: 10,
                 borderRadius: 2,
-                background: s.color,
+                background: paleta.series[s.clave],
                 display: "inline-block",
               }}
             />
@@ -178,8 +201,8 @@ export function GraficoPorDia({
                     y={MARGEN.arriba}
                     width={banda}
                     height={altoPlot}
-                    fill="#000"
-                    opacity={0.04}
+                    fill={paleta.resaltado}
+                    opacity={oscuro ? 0.08 : 0.04}
                   />
                 )}
                 {SERIES.map((s, j) => (
@@ -191,7 +214,7 @@ export function GraficoPorDia({
                       anchoColumna,
                       base,
                     )}
-                    fill={s.color}
+                    fill={paleta.series[s.clave]}
                   />
                 ))}
                 {/* Area de hover: toda la banda del dia, mas grande que las columnas */}
@@ -235,10 +258,10 @@ export function GraficoPorDia({
               ),
               width: 140,
               pointerEvents: "none",
-              background: "#fff",
-              border: "1px solid #e8e7e3",
+              background: token.colorBgElevated,
+              border: `1px solid ${GRILLA}`,
               borderRadius: 6,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              boxShadow: token.boxShadowSecondary,
               padding: "6px 10px",
               fontSize: 12,
             }}
@@ -255,7 +278,7 @@ export function GraficoPorDia({
                   style={{
                     width: 10,
                     height: 2,
-                    background: s.color,
+                    background: paleta.series[s.clave],
                     display: "inline-block",
                   }}
                 />

@@ -1,15 +1,18 @@
-import { LogoutOutlined, WarningOutlined } from "@ant-design/icons";
+import { DesktopOutlined, LogoutOutlined, MoonOutlined, SunOutlined, WarningOutlined } from "@ant-design/icons";
 import { useGetIdentity, useLogout } from "@refinedev/core";
-import { Button, Layout, Select, Space, Tag, Tooltip, Typography } from "antd";
+import { Button, Layout, Segmented, Select, Space, Tag, Tooltip, Typography, theme } from "antd";
 import { useEffect, useState } from "react";
 import { estadoFirma, formatFechaCorta } from "../constants/firma";
 import { useEmpresa } from "../contexts/empresa";
+import { useTema, type ModoTema } from "../contexts/tema";
 
 export function Header() {
   const { opciones, empresa, setRut, buscar, loading } = useEmpresa();
   const { data: identity } = useGetIdentity<{ name: string }>();
   const { mutate: logout } = useLogout();
   const [texto, setTexto] = useState("");
+  const { modo, setModo } = useTema();
+  const { token } = theme.useToken();
 
   // Busqueda en el servidor con un pequeño retardo para no consultar en cada tecla
   useEffect(() => {
@@ -24,8 +27,8 @@ export function Header() {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 24px",
-        background: "#fff",
-        borderBottom: "1px solid #f0f0f0",
+        background: token.colorBgContainer,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
       }}
     >
       <Space>
@@ -54,6 +57,16 @@ export function Header() {
         )}
       </Space>
       <Space>
+        <Segmented<ModoTema>
+          size="small"
+          value={modo}
+          onChange={setModo}
+          options={[
+            { value: "claro", icon: <Tooltip title="Tema claro"><SunOutlined /></Tooltip> },
+            { value: "oscuro", icon: <Tooltip title="Tema oscuro"><MoonOutlined /></Tooltip> },
+            { value: "sistema", icon: <Tooltip title="Según el sistema"><DesktopOutlined /></Tooltip> },
+          ]}
+        />
         <Typography.Text>{identity?.name}</Typography.Text>
         <Button icon={<LogoutOutlined />} onClick={() => logout()}>
           Salir

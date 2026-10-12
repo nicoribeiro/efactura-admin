@@ -25,6 +25,7 @@ import { apiJson } from "../../api/http";
 import { TIPOS_DOC } from "../../constants/cfe";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import { useEmpresa } from "../../contexts/empresa";
+import { useTema } from "../../contexts/tema";
 import {
   mismoRango,
   rangoPorDefecto,
@@ -147,16 +148,35 @@ function rangosDeFechas(fechas: string[]) {
   return partes.join(", ");
 }
 
-const ICONOS: Record<Gravedad, ReactNode> = {
-  error: <CloseCircleFilled style={{ color: "#d03b3b" }} />,
-  warning: <ExclamationCircleFilled style={{ color: "#c98500" }} />,
-  info: <InfoCircleFilled style={{ color: "#52514e" }} />,
+/** Colores de estado: en claro los del tablero original; en oscuro, los del tema oscuro de Ant Design */
+const COLORES_ESTADO = {
+  claro: {
+    error: "#d03b3b",
+    warning: "#c98500",
+    info: "#52514e",
+    ok: "#2e8540",
+  },
+  oscuro: {
+    error: "#e86465",
+    warning: "#d89614",
+    info: "#a6a5a0",
+    ok: "#49aa19",
+  },
 };
+
+const icono = (gravedad: Gravedad, colores: typeof COLORES_ESTADO.claro) =>
+  ({
+    error: <CloseCircleFilled style={{ color: colores.error }} />,
+    warning: <ExclamationCircleFilled style={{ color: colores.warning }} />,
+    info: <InfoCircleFilled style={{ color: colores.info }} />,
+  })[gravedad];
 
 /** Tablero de la empresa seleccionada (solo lectura) */
 export function Inicio() {
   const { empresa } = useEmpresa();
   const navigate = useNavigate();
+  const { oscuro } = useTema();
+  const colores = COLORES_ESTADO[oscuro ? "oscuro" : "claro"];
   const [rango, setRango] = useState<Rango>(rangoPorDefecto);
   const [datos, setDatos] = useState<Datos>({ errores: {} });
   const [loading, setLoading] = useState(true);
@@ -512,7 +532,7 @@ export function Inicio() {
                   title={k.titulo}
                   value={k.valor ?? "-"}
                   valueStyle={{
-                    color: k.destacar ? "#d03b3b" : undefined,
+                    color: k.destacar ? colores.error : undefined,
                     fontWeight: 600,
                   }}
                   prefix={
@@ -532,14 +552,14 @@ export function Inicio() {
               <Skeleton active />
             ) : avisos.length === 0 ? (
               <Space>
-                <CheckCircleFilled style={{ color: "#2e8540" }} />
+                <CheckCircleFilled style={{ color: colores.ok }} />
                 <Typography.Text>Todo en orden</Typography.Text>
               </Space>
             ) : (
               <Space direction="vertical" size={10} style={{ width: "100%" }}>
                 {avisos.map((a, i) => (
                   <Space key={i} align="start">
-                    {ICONOS[a.gravedad]}
+                    {icono(a.gravedad, colores)}
                     <Typography.Text>{a.texto}</Typography.Text>
                   </Space>
                 ))}

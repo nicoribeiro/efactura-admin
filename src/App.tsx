@@ -18,8 +18,7 @@ import routerProvider, {
   DocumentTitleHandler,
   NavigateToResource,
 } from "@refinedev/react-router";
-import { App as AntdApp, ConfigProvider } from "antd";
-import esES from "antd/locale/es_ES";
+import { App as AntdApp } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
@@ -27,6 +26,7 @@ import { STATUS_TIMEOUT } from "./api/http";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { EmpresaProvider } from "./contexts/empresa";
+import { TemaProvider } from "./contexts/TemaProvider";
 import { DocumentoList } from "./pages/documentos/list";
 import { Inicio } from "./pages/inicio";
 import { DocumentoShow } from "./pages/documentos/show";
@@ -46,7 +46,7 @@ const Title = ({ collapsed }: { collapsed: boolean }) => (
 export default function App() {
   return (
     <BrowserRouter>
-      <ConfigProvider locale={esES}>
+      <TemaProvider>
         <AntdApp>
           <Refine
             dataProvider={dataProvider}
@@ -166,7 +166,7 @@ export default function App() {
             <DocumentTitleHandler handler={() => "efactura"} />
           </Refine>
         </AntdApp>
-      </ConfigProvider>
+      </TemaProvider>
     </BrowserRouter>
   );
 }
