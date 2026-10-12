@@ -130,6 +130,12 @@ export const ESTADOS_FILTRO = [
 
 export type Direccion = "EMITIDO" | "RECIBIDO";
 
+/** Fecha sin hora (DD/MM/YYYY), para las que la API guarda como dia: emision de comprobantes, sobres, CAE */
+export const formatFechaDia = (value?: string | null) =>
+  value
+    ? `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`
+    : "";
+
 /** Las fechas de la API vienen como "yyyy-MM-dd HH:mm:ss z"; se muestra sin la zona */
 export const formatFechaApi = (value?: string | null) =>
   value ? value.slice(0, 19) : "";

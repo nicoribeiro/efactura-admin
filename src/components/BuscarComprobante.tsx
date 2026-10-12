@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { apiJson } from "../api/http";
 import {
   ESTADOS_CFE,
-  formatFechaApi,
+  formatFechaDia,
   tipoDocByName,
   type Direccion,
 } from "../constants/cfe";
@@ -152,7 +152,7 @@ export function BuscarComprobante() {
                   </Space>
                 }
                 description={[
-                  formatFechaApi(r.doc.fechaEmision).slice(0, 10),
+                  formatFechaDia(r.doc.fechaEmision),
                   r.direccion === "EMITIDO"
                     ? (r.doc.empresaReceptora?.razon ??
                       r.doc.titular?.documento)

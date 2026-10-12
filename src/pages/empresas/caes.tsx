@@ -13,7 +13,7 @@ import {
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { apiJson } from "../../api/http";
-import { formatFechaApi, tipoDocByName } from "../../constants/cfe";
+import { formatFechaDia, tipoDocByName } from "../../constants/cfe";
 import {
   DIAS_RITMO,
   emitidosPorTipo,
@@ -208,7 +208,7 @@ export function CaeTable({ rut }: { rut: string }) {
         <Table.Column<CAE>
           title="Vencimiento"
           dataIndex="fechaVencimiento"
-          render={formatFechaApi}
+          render={formatFechaDia}
         />
         <Table.Column<CAE>
           title="Estado"

@@ -1,6 +1,6 @@
 import { Alert, Collapse, Descriptions, Empty, Skeleton } from "antd";
 import { Link } from "react-router";
-import { formatFechaApi } from "../../constants/cfe";
+import { formatFechaApi, formatFechaDia } from "../../constants/cfe";
 import { XmlCode } from "../../components/XmlCode";
 import { EstadoSobreTag } from "../sobres/componentes";
 import type { EstadoSobre } from "./useSobre";
@@ -89,7 +89,7 @@ export function SobreDocumentoInfo({
           )}
         </Descriptions.Item>
         <Descriptions.Item label="Fecha">
-          {formatFechaApi(sobre.fecha) || "-"}
+          {formatFechaDia(sobre.fecha) || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Comprobantes en el sobre">
           {sobre.cantComprobantes ?? "-"}

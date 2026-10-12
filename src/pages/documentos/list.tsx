@@ -6,7 +6,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
-  formatFechaApi,
+  formatFechaDia,
   tipoDocByName,
   type Direccion,
 } from "../../constants/cfe";
@@ -251,7 +251,7 @@ export function DocumentoList() {
         <Table.Column<Documento>
           title="Fecha"
           dataIndex="fechaEmision"
-          render={formatFechaApi}
+          render={formatFechaDia}
         />
         <Table.Column<Documento>
           title={direccion === "EMITIDO" ? "Receptor" : "Emisor"}

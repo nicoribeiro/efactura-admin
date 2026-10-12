@@ -2,7 +2,7 @@ import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
 import { Alert, Descriptions, Space, Table, Tag, Typography } from "antd";
 import { Link, useParams } from "react-router";
-import { ESTADOS_CFE, formatFechaApi } from "../../constants/cfe";
+import { ESTADOS_CFE, formatFechaDia } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
 import { urlDocumento } from "../../utils/busqueda";
 import { estadosCfeEnSobre, rechazoDelSobre } from "../../utils/dgi";
@@ -72,7 +72,7 @@ export function SobreShow() {
               {emitido ? "Emitido" : "Recibido"}
             </Descriptions.Item>
             <Descriptions.Item label="Fecha">
-              {formatFechaApi(sobre.fecha) || "-"}
+              {formatFechaDia(sobre.fecha) || "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Emisor">
               {etiquetaEmpresa(sobre.empresaEmisora) ?? "-"}
@@ -119,7 +119,7 @@ export function SobreShow() {
               />
               <Table.Column<ComprobanteResumen>
                 title="Fecha"
-                render={(_, c) => formatFechaApi(c.fechaEmision).slice(0, 10)}
+                render={(_, c) => formatFechaDia(c.fechaEmision)}
               />
               <Table.Column<ComprobanteResumen>
                 title={emitido ? "Receptor" : "Emisor"}

@@ -5,7 +5,7 @@ import { Button, Descriptions, Table, Tag, Typography } from "antd";
 import { useParams, useSearchParams } from "react-router";
 import {
   ESTADOS_CFE,
-  formatFechaApi,
+  formatFechaDia,
   tipoDocByName,
 } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
@@ -13,7 +13,10 @@ import { etiquetaEmpresa } from "./list";
 import { abrirPdf } from "./pdf";
 import { rechazoDgi } from "../../utils/dgi";
 import { RechazoDgiAlert } from "./rechazo";
-import { ReferenciasDocumento, type DocumentoConReferencia } from "./referencias";
+import {
+  ReferenciasDocumento,
+  type DocumentoConReferencia,
+} from "./referencias";
 import { SobreDocumentoInfo } from "./sobre";
 import { useSobreDocumento } from "./useSobre";
 
@@ -113,10 +116,10 @@ export function DocumentoShow() {
             </Descriptions.Item>
             <Descriptions.Item label="Serie / Nro">{`${doc.serie}-${doc.nro}`}</Descriptions.Item>
             <Descriptions.Item label="Fecha emisión">
-              {formatFechaApi(doc.fechaEmision)}
+              {formatFechaDia(doc.fechaEmision)}
             </Descriptions.Item>
             <Descriptions.Item label="Fecha generación">
-              {formatFechaApi(doc.fechaGeneracion)}
+              {formatFechaDia(doc.fechaGeneracion)}
             </Descriptions.Item>
             <Descriptions.Item label="Emisor">
               {etiquetaEmpresa(doc.empresaEmisora) ?? "-"}
@@ -158,7 +161,7 @@ export function DocumentoShow() {
               )}
             </Descriptions.Item>
             <Descriptions.Item label="Vencimiento">
-              {formatFechaApi(doc.vencimiento) || "-"}
+              {formatFechaDia(doc.vencimiento) || "-"}
             </Descriptions.Item>
             {doc.adenda && (
               <Descriptions.Item label="Adenda" span={2}>

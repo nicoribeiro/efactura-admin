@@ -14,7 +14,7 @@ import {
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { formatFechaApi } from "../../constants/cfe";
+import { formatFechaApi, formatFechaDia } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
 import {
   mismoRango,
@@ -191,7 +191,7 @@ export function SobreList() {
         <Table.Column<SobreResumen>
           title="Fecha"
           dataIndex="fecha"
-          render={(f?: string | null) => formatFechaApi(f).slice(0, 10)}
+          render={formatFechaDia}
         />
         <Table.Column<SobreResumen>
           title={emitidos ? "Receptor" : "Emisor"}
