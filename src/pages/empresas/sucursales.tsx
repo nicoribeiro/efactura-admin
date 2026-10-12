@@ -1,6 +1,6 @@
-import { PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useList } from "@refinedev/core";
-import { Alert, App, Button, Form, Input, InputNumber, Modal, Table } from "antd";
+import { Alert, App, Button, Form, Input, InputNumber, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
 import { rolUsuario } from "../../providers/authProvider";
@@ -105,14 +105,16 @@ function EditarSucursal({
   );
 }
 
-/** Sucursales de una empresa; un ADMIN puede agregarlas y editarlas */
+/** Sucursales de una empresa; un ADMIN puede agregarlas, editarlas y borrarlas (sin comprobantes, no la ultima) */
 export function SucursalesTable({ rut }: { rut: string }) {
   const { result, query } = useList<Sucursal>({
     resource: "sucursales",
     meta: { rut },
     pagination: { mode: "off" },
   });
+  const { message } = App.useApp();
   const [esAdmin, setEsAdmin] = useState(false);
+  const [borrando, setBorrando] = useState<number>();
   // null = cerrado, undefined = nueva
   const [editando, setEditando] = useState<Sucursal | undefined | null>(null);
 
@@ -124,6 +126,20 @@ export function SucursalesTable({ rut }: { rut: string }) {
     return <Alert type="error" showIcon message="No se pudieron obtener las sucursales" description={query.error?.message} />;
 
   const sucursales = [...(result?.data ?? [])].sort((a, b) => (a.CdgDGISucur ?? 0) - (b.CdgDGISucur ?? 0));
+
+  // La API verifica que no tenga comprobantes y que no sea la ultima
+  const borrar = async (s: Sucursal) => {
+    setBorrando(s.id);
+    try {
+      await apiJson("DELETE", `/empresa/${rut}/sucursales/${s.CdgDGISucur}`);
+      message.success(`Sucursal ${s.CdgDGISucur} borrada`);
+      query.refetch();
+    } catch (e) {
+      message.error((e as { message?: string })?.message ?? "Error");
+    } finally {
+      setBorrando(undefined);
+    }
+  };
 
   return (
     <>
@@ -143,9 +159,31 @@ export function SucursalesTable({ rut }: { rut: string }) {
           <Table.Column<Sucursal>
             title=""
             render={(_, s) => (
-              <Button size="small" onClick={() => setEditando(s)}>
-                Editar
-              </Button>
+              <Space size={4}>
+                <Button size="small" onClick={() => setEditando(s)}>
+                  Editar
+                </Button>
+                {sucursales.length > 1 ? (
+                  <Popconfirm
+                    title={`¿Borrar la sucursal ${s.CdgDGISucur}?`}
+                    description="Solo se puede si no tiene comprobantes."
+                    okText="Borrar"
+                    okButtonProps={{ danger: true }}
+                    cancelText="Cancelar"
+                    onConfirm={() => borrar(s)}
+                  >
+                    <Button size="small" danger icon={<DeleteOutlined />} loading={borrando === s.id}>
+                      Borrar
+                    </Button>
+                  </Popconfirm>
+                ) : (
+                  <Tooltip title="No se puede borrar la única sucursal">
+                    <Button size="small" danger icon={<DeleteOutlined />} disabled>
+                      Borrar
+                    </Button>
+                  </Tooltip>
+                )}
+              </Space>
             )}
           />
         )}

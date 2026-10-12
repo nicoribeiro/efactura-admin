@@ -70,6 +70,7 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "PUT", path: /^\/empresa\/\d+$/ },
   { method: "POST", path: /^\/empresa\/\d+\/sucursales$/ },
   { method: "PUT", path: /^\/empresa\/\d+\/sucursales\/\d+$/ },
+  { method: "DELETE", path: /^\/empresa\/\d+\/sucursales\/\d+$/ },
   // Reporte diario a DGI (de a un dia)
   { method: "POST", path: /^\/empresa\/\d+\/reporteDiario\/\d{8}$/ },
   // Consulta a DGI del resultado de un comprobante (GET con efecto: actualiza su estado)
