@@ -22,7 +22,12 @@ export function descargar(
   contenido: string,
   tipo = "text/csv;charset=utf-8",
 ) {
-  const url = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+  descargarBlob(nombre, new Blob([contenido], { type: tipo }));
+}
+
+/** Descarga un archivo (Blob) desde el navegador con el nombre dado */
+export function descargarBlob(nombre: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = nombre;

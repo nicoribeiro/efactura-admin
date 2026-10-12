@@ -167,5 +167,19 @@ export async function apiJson<T>(method: string, path: string, query?: QueryPara
 }
 
 export async function apiBlob(path: string, query?: QueryParams): Promise<Blob> {
-  return request("GET", path, query, undefined, (response) => response.blob());
+  return request("GET", path, query, undefined, async (response) => {
+    // La API devuelve sus errores como JSON con HTTP 200: no es el archivo pedido
+    if (response.headers.get("Content-Type")?.includes("application/json")) {
+      const text = await response.text();
+      const body = (text ? JSON.parse(text) : undefined) as ApiErrorBody | undefined;
+      if (body && typeof body.result_code === "number" && body.result_code !== 0)
+        throw {
+          message: [body.result_message, body.result_detail].filter(Boolean).join(": ") || body.result_name || "Error de la API",
+          statusCode: response.status,
+          errors: { api: [text] },
+        } as HttpError;
+      return new Blob([text], { type: "application/json" });
+    }
+    return response.blob();
+  });
 }

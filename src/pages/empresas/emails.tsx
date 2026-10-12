@@ -1,8 +1,13 @@
-import { PaperClipOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  DownloadOutlined,
+  PaperClipOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { useTable } from "@refinedev/antd";
 import type { CrudFilters, HttpError } from "@refinedev/core";
 import {
   Alert,
+  App,
   Button,
   Collapse,
   DatePicker,
@@ -16,7 +21,10 @@ import {
   Typography,
 } from "antd";
 import type { Dayjs } from "dayjs";
+import { useState } from "react";
+import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
+import { descargarBlob } from "../../utils/csv";
 import { CarpetasImap } from "./carpetas";
 
 type EstadoAdjunto =
@@ -31,6 +39,8 @@ interface Adjunto {
   error?: string | null;
   /** Stack trace completo del error */
   errorStack?: string | null;
+  /** false: binario guardado como texto antes del cambio a base64, el archivo esta danado */
+  integro?: boolean;
 }
 
 interface EmailRecibido {
@@ -42,7 +52,10 @@ interface EmailRecibido {
   attachments: Adjunto[];
 }
 
+type FiltroAdjuntos = "si" | "no" | "todos";
+
 interface FiltrosForm {
+  adjuntos?: FiltroAdjuntos;
   estado?: EstadoAdjunto;
   fecha?: [Dayjs | null, Dayjs | null] | null;
   q?: string;
@@ -80,6 +93,56 @@ function estadoEmail(email: EmailRecibido): EstadoAdjunto | null {
   return null;
 }
 
+/** Boton para bajar un adjunto con su nombre original */
+function DescargarAdjunto({
+  rut,
+  emailId,
+  adjunto,
+}: {
+  rut: string;
+  emailId: number;
+  adjunto: Adjunto;
+}) {
+  const { message } = App.useApp();
+  const [bajando, setBajando] = useState(false);
+
+  if (adjunto.integro === false)
+    return (
+      <Tooltip title="Se guardó antes de que el sistema guardara bien los archivos binarios (PDF, imágenes, planillas): el contenido quedó dañado">
+        <Button size="small" icon={<DownloadOutlined />} disabled>
+          Dañado
+        </Button>
+      </Tooltip>
+    );
+
+  const bajar = async () => {
+    setBajando(true);
+    try {
+      const blob = await apiBlob(
+        `/empresa/${rut}/emails/${emailId}/adjuntos/${adjunto.id}`,
+      );
+      descargarBlob(adjunto.name ?? `adjunto-${adjunto.id}`, blob);
+    } catch (e) {
+      message.error(
+        `No se pudo bajar el adjunto: ${(e as { message?: string })?.message ?? "error"}`,
+      );
+    } finally {
+      setBajando(false);
+    }
+  };
+
+  return (
+    <Button
+      size="small"
+      icon={<DownloadOutlined />}
+      loading={bajando}
+      onClick={bajar}
+    >
+      Bajar
+    </Button>
+  );
+}
+
 /** Emails recibidos por una empresa (solo lectura) */
 export function EmailsTable({ rut }: { rut: string }) {
   const { tableProps, searchFormProps, tableQuery } = useTable<
@@ -91,7 +154,14 @@ export function EmailsTable({ rut }: { rut: string }) {
     syncWithLocation: false,
     meta: { rut },
     pagination: { pageSize: 20 },
+    // Por defecto solo los emails con adjuntos
+    filters: { initial: [{ field: "adjuntos", operator: "eq", value: "si" }] },
     onSearch: (values): CrudFilters => [
+      {
+        field: "adjuntos",
+        operator: "eq",
+        value: values.adjuntos === "todos" ? undefined : values.adjuntos,
+      },
       { field: "estado", operator: "eq", value: values.estado },
       {
         field: "fecha",
@@ -123,7 +193,18 @@ export function EmailsTable({ rut }: { rut: string }) {
         {...searchFormProps}
         layout="inline"
         style={{ marginBottom: 16, rowGap: 8 }}
+        initialValues={{ adjuntos: "si" }}
       >
+        <Form.Item name="adjuntos" label="Adjuntos">
+          <Select<FiltroAdjuntos>
+            style={{ width: 110 }}
+            options={[
+              { value: "si", label: "Sí" },
+              { value: "no", label: "No" },
+              { value: "todos", label: "Todos" },
+            ]}
+          />
+        </Form.Item>
         <Form.Item name="estado" label="Estado">
           <Select
             allowClear
@@ -219,6 +300,17 @@ export function EmailsTable({ rut }: { rut: string }) {
                     "-"
                   )
                 }
+              />
+              <Table.Column<Adjunto>
+                title=""
+                width={110}
+                render={(_, adjunto) => (
+                  <DescargarAdjunto
+                    rut={rut}
+                    emailId={email.id}
+                    adjunto={adjunto}
+                  />
+                )}
               />
             </Table>
           ),
