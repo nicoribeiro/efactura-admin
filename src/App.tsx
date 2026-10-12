@@ -6,6 +6,7 @@ import {
   FileTextOutlined,
   InboxOutlined,
   TeamOutlined,
+  ScheduleOutlined,
 } from "@ant-design/icons";
 import {
   AuthPage,
@@ -34,6 +35,7 @@ import { DocumentoList } from "./pages/documentos/list";
 import { Inicio } from "./pages/inicio";
 import { Cotizaciones } from "./pages/cotizaciones";
 import { Usuarios } from "./pages/usuarios";
+import { Procesos } from "./pages/procesos";
 import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
 import { ReporteDiarioList } from "./pages/reportes/list";
@@ -90,6 +92,11 @@ export default function App() {
                 name: "usuarios",
                 list: "/usuarios",
                 meta: { label: "Usuarios", icon: <TeamOutlined /> },
+              },
+              {
+                name: "procesos",
+                list: "/procesos",
+                meta: { label: "Procesos", icon: <ScheduleOutlined /> },
               },
               {
                 name: "cotizaciones",
@@ -167,6 +174,7 @@ export default function App() {
                 <Route path="/reportes" element={<ReporteDiarioList />} />
                 <Route path="/cotizaciones" element={<Cotizaciones />} />
                 <Route path="/usuarios" element={<Usuarios />} />
+                <Route path="/procesos" element={<Procesos />} />
                 <Route path="/empresas">
                   <Route index element={<EmpresaList />} />
                   <Route path="show/:id" element={<EmpresaShow />} />

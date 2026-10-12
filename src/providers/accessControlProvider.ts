@@ -2,7 +2,7 @@ import type { AccessControlProvider } from "@refinedev/core";
 import { rolUsuario } from "./authProvider";
 
 /** Secciones que solo ve un ADMIN (la API igual las rechaza para un USER) */
-const SOLO_ADMIN = new Set(["usuarios"]);
+const SOLO_ADMIN = new Set(["usuarios", "procesos"]);
 
 /** Oculta del menu (y de los botones que usan CanAccess) lo que el usuario no puede ver */
 export const accessControlProvider: AccessControlProvider = {
