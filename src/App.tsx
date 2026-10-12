@@ -2,6 +2,7 @@ import {
   BankOutlined,
   CalendarOutlined,
   DashboardOutlined,
+  DollarOutlined,
   FileTextOutlined,
   InboxOutlined,
 } from "@ant-design/icons";
@@ -30,6 +31,7 @@ import { EmpresaProvider } from "./contexts/empresa";
 import { TemaProvider } from "./contexts/TemaProvider";
 import { DocumentoList } from "./pages/documentos/list";
 import { Inicio } from "./pages/inicio";
+import { Cotizaciones } from "./pages/cotizaciones";
 import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
 import { ReporteDiarioList } from "./pages/reportes/list";
@@ -79,6 +81,11 @@ export default function App() {
                 name: "reportes",
                 list: "/reportes",
                 meta: { label: "Reporte diario", icon: <CalendarOutlined /> },
+              },
+              {
+                name: "cotizaciones",
+                list: "/cotizaciones",
+                meta: { label: "Cotizaciones", icon: <DollarOutlined /> },
               },
               {
                 name: "empresas",
@@ -149,6 +156,7 @@ export default function App() {
                   <Route path="show/:id" element={<SobreShow />} />
                 </Route>
                 <Route path="/reportes" element={<ReporteDiarioList />} />
+                <Route path="/cotizaciones" element={<Cotizaciones />} />
                 <Route path="/empresas">
                   <Route index element={<EmpresaList />} />
                   <Route path="show/:id" element={<EmpresaShow />} />

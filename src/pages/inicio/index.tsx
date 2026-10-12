@@ -94,6 +94,9 @@ interface Datos {
   ritmo?: Map<number, number>;
   emailsError?: number;
   carpetas?: Carpeta[];
+  /** Venta USD de ayer (null si no esta cargada) y valores de UI: los usa el tope de UI de los eTickets */
+  usdAyer?: number | null;
+  uis?: { anio: number }[];
   reportes?: { fecha: string }[];
   errores: Record<string, string>;
 }
@@ -211,6 +214,16 @@ export function Inicio() {
         pageSize: 1,
       }).then((r) => r.count),
       carpetas: apiJson<Carpeta[]>("GET", `/empresa/${rut}/emails/carpetas`),
+      usdAyer: apiJson<{ cotizaciones: { venta?: number | null }[] }>(
+        "GET",
+        "/tiposDeCambio",
+        {
+          moneda: "USD",
+          desde: dayjs().subtract(1, "day").format("YYYY-MM-DD"),
+          hasta: dayjs().subtract(1, "day").format("YYYY-MM-DD"),
+        },
+      ).then((r) => r.cotizaciones[0]?.venta ?? null),
+      uis: apiJson<{ anio: number }[]>("GET", "/ui"),
       reportes: apiJson<{ fecha: string }[][]>(
         "GET",
         `/empresa/${rut}/reporteDiario/${desde.format("YYYYMMDD")}`,
@@ -375,6 +388,30 @@ export function Inicio() {
       lista.push({
         gravedad: "warning",
         texto: `${atrasadas.length} carpeta${atrasadas.length === 1 ? "" : "s"} de email sin sincronizar en los últimos 15 minutos`,
+      });
+
+    // Valores que necesita la emision de eTickets en moneda extranjera (tope de UI). Si la API no tiene los
+    // endpoints (version vieja) no se avisa nada.
+    const faltaUsd = datos.usdAyer === null;
+    const faltaUi =
+      datos.uis !== undefined &&
+      !datos.uis.some((u) => u.anio === dayjs().year());
+    if (faltaUsd || faltaUi)
+      lista.push({
+        gravedad: "warning",
+        texto: (
+          <>
+            {[
+              faltaUsd &&
+                `Sin cotización USD del ${dayjs().subtract(1, "day").format("DD/MM")}`,
+              faltaUi && `sin UI de ${dayjs().year()}`,
+            ]
+              .filter(Boolean)
+              .join(" y ")}
+            : los eTickets en moneda extranjera fallan (
+            <Link to="/cotizaciones">ver cotizaciones</Link>)
+          </>
+        ),
       });
 
     const orden: Record<Gravedad, number> = { error: 0, warning: 1, info: 2 };
