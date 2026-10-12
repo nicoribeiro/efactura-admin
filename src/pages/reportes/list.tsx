@@ -1,6 +1,7 @@
 import { List } from "@refinedev/antd";
 import {
   Alert,
+  Button,
   Collapse,
   DatePicker,
   Empty,
@@ -38,6 +39,29 @@ interface Fila {
 
 const MAX_DIAS = 62;
 
+/** Rangos rapidos (botones y presets del calendario); se calculan al momento para que "hoy" sea el dia actual */
+const rangosRapidos = (): { label: string; value: [Dayjs, Dayjs] }[] => {
+  const hoy = dayjs().startOf("day");
+  const mesAnterior = hoy.subtract(1, "month");
+  return [
+    { label: "Hoy", value: [hoy, hoy] },
+    { label: "Última semana", value: [hoy.subtract(6, "day"), hoy] },
+    { label: "Últimos 30 días", value: [hoy.subtract(29, "day"), hoy] },
+    { label: "Este mes", value: [hoy.startOf("month"), hoy] },
+    {
+      label: "Mes anterior",
+      value: [
+        mesAnterior.startOf("month"),
+        mesAnterior.endOf("month").startOf("day"),
+      ],
+    },
+    { label: "Últimos 60 días", value: [hoy.subtract(59, "day"), hoy] },
+  ];
+};
+
+const mismoRango = (a: [Dayjs, Dayjs], b: [Dayjs, Dayjs]) =>
+  a[0].isSame(b[0], "day") && a[1].isSame(b[1], "day");
+
 /** Cantidad de comprobantes informados (carátula del XML del reporte) */
 const cantidadComprobantes = (reporte: ReporteDiario) =>
   parsearReporte(reporte.xml)?.caratula.CantComprobantes ?? "-";
@@ -45,10 +69,10 @@ const cantidadComprobantes = (reporte: ReporteDiario) =>
 /** Reportes diarios enviados a DGI por la empresa seleccionada (solo lectura) */
 export function ReporteDiarioList() {
   const { empresa } = useEmpresa();
-  const [rango, setRango] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(6, "day"),
-    dayjs(),
-  ]);
+  // Por defecto los ultimos 30 dias
+  const [rango, setRango] = useState<[Dayjs, Dayjs]>(
+    () => rangosRapidos()[2].value,
+  );
   const [reportes, setReportes] = useState<ReporteDiario[]>([]);
   const [error, setError] = useState<{ message?: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,6 +133,7 @@ export function ReporteDiarioList() {
           format="DD/MM/YYYY"
           allowClear={false}
           value={rango}
+          presets={rangosRapidos()}
           disabledDate={(d) => d.isAfter(dayjs(), "day")}
           onChange={(valores) => {
             if (!valores?.[0] || !valores?.[1]) return;
@@ -124,6 +149,18 @@ export function ReporteDiarioList() {
         <Typography.Text type="secondary">
           Hasta {MAX_DIAS} días.
         </Typography.Text>
+      </Space>
+      <Space style={{ marginBottom: 16, display: "flex" }} wrap size={[8, 8]}>
+        {rangosRapidos().map(({ label, value }) => (
+          <Button
+            key={label}
+            size="small"
+            type={mismoRango(rango, value) ? "primary" : "default"}
+            onClick={() => setRango(value)}
+          >
+            {label}
+          </Button>
+        ))}
       </Space>
 
       {error && (
