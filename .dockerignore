@@ -1,6 +1,10 @@
 node_modules
 dist
-.git
+# De .git solo hace falta HEAD y refs (commit que se muestra en el panel)
+.git/objects
+.git/logs
+.git/hooks
+.git/index
 .env.local
 *.local
 *.log

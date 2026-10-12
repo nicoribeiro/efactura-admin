@@ -24,6 +24,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { STATUS_TIMEOUT } from "./api/http";
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { EmpresaProvider } from "./contexts/empresa";
 import { DocumentoList } from "./pages/documentos/list";
@@ -114,7 +115,11 @@ export default function App() {
                     fallback={<CatchAllNavigate to="/login" />}
                   >
                     <EmpresaProvider>
-                      <ThemedLayout Header={Header} Title={Title}>
+                      <ThemedLayout
+                        Header={Header}
+                        Title={Title}
+                        Footer={Footer}
+                      >
                         <Outlet />
                       </ThemedLayout>
                     </EmpresaProvider>
