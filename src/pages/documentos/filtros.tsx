@@ -64,8 +64,10 @@ function resumen(filters: CrudFilters) {
       `DGI: ${ESTADOS_FILTRO.find((e) => e.value === estado)?.label ?? estado}`,
     );
 
+  const contraparte =
+    valorFiltro(filters, "direccion") === "RECIBIDO" ? "emisor" : "receptor";
   const rut = valorFiltro(filters, "rutReceptor");
-  if (rut) tags.push(`RUT ${rut}`);
+  if (rut) tags.push(`RUT ${contraparte} ${rut}`);
   const razon = valorFiltro(filters, "razonReceptor");
   if (razon) tags.push(`Razón "${razon}"`);
 
@@ -100,6 +102,9 @@ interface Props {
   };
 }
 
+/** Primer dia del historial para el boton "Desde el principio" */
+const INICIO_HISTORIAL = "2016-01-01";
+
 /** Filtros del listado de comprobantes, en un panel colapsable */
 export function FiltrosComprobantes({
   searchFormProps,
@@ -110,6 +115,8 @@ export function FiltrosComprobantes({
   const form = searchFormProps.form;
   const fechaSeleccionada = Form.useWatch("fecha", form) as
     (Dayjs | null)[] | undefined;
+  // La contraparte es el receptor en los emitidos y el emisor en los recibidos (la API filtra segun la direccion)
+  const recibidos = Form.useWatch("direccion", form) === "RECIBIDO";
 
   const cambiarAbierto = (valor: boolean) => {
     setAbierto(valor);
@@ -119,6 +126,15 @@ export function FiltrosComprobantes({
       // sin localStorage: solo se pierde recordar el estado
     }
   };
+
+  // Ademas de los rangos comunes, "desde el principio": todo el historial (el sistema arranca en 2016)
+  const rangos = [
+    ...rangosRapidos(),
+    {
+      label: "Desde el principio",
+      value: [dayjs(INICIO_HISTORIAL), dayjs().startOf("day")] as Rango,
+    },
+  ];
 
   const aplicarRango = (rango: Rango) => {
     form?.setFieldsValue({ fecha: rango });
@@ -175,13 +191,13 @@ export function FiltrosComprobantes({
             <Form.Item name="fecha" noStyle>
               <DatePicker.RangePicker
                 format="DD/MM/YYYY"
-                presets={rangosRapidos()}
+                presets={rangos}
                 style={{ width: "100%", maxWidth: 320 }}
               />
             </Form.Item>
           </Form.Item>
           <Space wrap size={[6, 6]} style={{ marginBottom: 16 }}>
-            {rangosRapidos().map(({ label, value }) => (
+            {rangos.map(({ label, value }) => (
               <Button
                 key={label}
                 size="small"
@@ -199,7 +215,7 @@ export function FiltrosComprobantes({
 
       <Row gutter={[16, 0]}>
         <Col xs={24} lg={10}>
-          <Typography.Text strong>Receptor</Typography.Text>
+          <Typography.Text strong>{recibidos ? "Emisor" : "Receptor"}</Typography.Text>
           <Row gutter={8} style={{ marginTop: 8 }}>
             <Col xs={24} sm={10}>
               <Form.Item name="rutReceptor" label="RUT">
