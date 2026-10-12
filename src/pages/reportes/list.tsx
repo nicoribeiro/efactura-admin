@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiJson } from "../../api/http";
 import { XmlCode } from "../../components/XmlCode";
 import { useEmpresa } from "../../contexts/empresa";
+import { mismoRango, rangoPorDefecto, rangosRapidos } from "../../utils/rangos";
 import { parsearReporte } from "../../utils/reporte";
 import { ReporteDetalle } from "./detalle";
 import { tagEstadoReporte } from "./estado";
@@ -39,29 +40,6 @@ interface Fila {
 
 const MAX_DIAS = 62;
 
-/** Rangos rapidos (botones y presets del calendario); se calculan al momento para que "hoy" sea el dia actual */
-const rangosRapidos = (): { label: string; value: [Dayjs, Dayjs] }[] => {
-  const hoy = dayjs().startOf("day");
-  const mesAnterior = hoy.subtract(1, "month");
-  return [
-    { label: "Hoy", value: [hoy, hoy] },
-    { label: "Última semana", value: [hoy.subtract(6, "day"), hoy] },
-    { label: "Últimos 30 días", value: [hoy.subtract(29, "day"), hoy] },
-    { label: "Este mes", value: [hoy.startOf("month"), hoy] },
-    {
-      label: "Mes anterior",
-      value: [
-        mesAnterior.startOf("month"),
-        mesAnterior.endOf("month").startOf("day"),
-      ],
-    },
-    { label: "Últimos 60 días", value: [hoy.subtract(59, "day"), hoy] },
-  ];
-};
-
-const mismoRango = (a: [Dayjs, Dayjs], b: [Dayjs, Dayjs]) =>
-  a[0].isSame(b[0], "day") && a[1].isSame(b[1], "day");
-
 /** Cantidad de comprobantes informados (carátula del XML del reporte) */
 const cantidadComprobantes = (reporte: ReporteDiario) =>
   parsearReporte(reporte.xml)?.caratula.CantComprobantes ?? "-";
@@ -70,9 +48,7 @@ const cantidadComprobantes = (reporte: ReporteDiario) =>
 export function ReporteDiarioList() {
   const { empresa } = useEmpresa();
   // Por defecto los ultimos 30 dias
-  const [rango, setRango] = useState<[Dayjs, Dayjs]>(
-    () => rangosRapidos()[2].value,
-  );
+  const [rango, setRango] = useState<[Dayjs, Dayjs]>(rangoPorDefecto);
   const [reportes, setReportes] = useState<ReporteDiario[]>([]);
   const [error, setError] = useState<{ message?: string } | null>(null);
   const [loading, setLoading] = useState(false);

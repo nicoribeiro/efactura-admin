@@ -1,13 +1,27 @@
-import { EyeOutlined, FilePdfOutlined, SearchOutlined } from "@ant-design/icons";
+import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
-import { Button, Card, DatePicker, Form, Input, InputNumber, Segmented, Select, Space, Table, Tag, Typography } from "antd";
+import { Button, Space, Table, Tag, Typography } from "antd";
 import type { Dayjs } from "dayjs";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ESTADOS_CFE, TIPOS_DOC, formatFechaApi, tipoDocByName, type Direccion } from "../../constants/cfe";
+import {
+  ESTADOS_CFE,
+  formatFechaApi,
+  tipoDocByName,
+  type Direccion,
+} from "../../constants/cfe";
 import { useEmpresa, type EmpresaRef } from "../../contexts/empresa";
 import { documentoId } from "../../providers/dataProvider";
+import { rangoPorDefecto } from "../../utils/rangos";
+import { FiltrosComprobantes } from "./filtros";
 import { abrirPdf } from "./pdf";
+
+/** Rango del formulario -> filtro: desde el inicio del primer dia hasta el final del ultimo */
+const aFiltroFecha = (fecha?: [Dayjs | null, Dayjs | null] | null) =>
+  fecha?.[0] && fecha?.[1]
+    ? [fecha[0].startOf("day").toDate(), fecha[1].endOf("day").toDate()]
+    : undefined;
 
 export interface Documento {
   id: number;
@@ -41,112 +55,128 @@ export function DocumentoList() {
   const navigate = useNavigate();
   const { open } = useNotification();
 
-  const { tableProps, searchFormProps, filters } = useTable<Documento, never, FiltrosForm>({
+  // Por defecto los ultimos 30 dias (se fija al montar la pantalla)
+  const [rangoInicial] = useState(rangoPorDefecto);
+
+  const { tableProps, searchFormProps, filters } = useTable<
+    Documento,
+    never,
+    FiltrosForm
+  >({
     resource: "documentos",
     syncWithLocation: false,
     meta: { rut: empresa?.rut },
     queryOptions: { enabled: !!empresa },
     pagination: { pageSize: 20 },
-    filters: { initial: [{ field: "direccion", operator: "eq", value: "EMITIDO" }] },
+    filters: {
+      initial: [
+        { field: "direccion", operator: "eq", value: "EMITIDO" },
+        { field: "fecha", operator: "eq", value: aFiltroFecha(rangoInicial) },
+      ],
+    },
     onSearch: (values): CrudFilters => {
-      // Buscar un documento puntual requiere tipo + serie + numero juntos (asi lo resuelve la API)
-      const puntual = values.idTipoDoc && values.serie && values.nro;
+      // Tipo y serie filtran el listado; con los tres (tipo, serie y numero) la API busca un comprobante puntual
+      const serie = values.serie?.trim() || undefined;
+      const puntual = values.idTipoDoc && serie && values.nro;
       return [
         { field: "direccion", operator: "eq", value: values.direccion },
-        { field: "fecha", operator: "eq", value: values.fecha ? values.fecha.map((d) => d?.toDate()) : undefined },
-        { field: "idTipoDoc", operator: "eq", value: puntual ? values.idTipoDoc : undefined },
-        { field: "serie", operator: "eq", value: puntual ? values.serie : undefined },
-        { field: "nro", operator: "eq", value: puntual ? values.nro : undefined },
-        { field: "rutReceptor", operator: "eq", value: values.rutReceptor },
-        // La API falla si se filtra por rutReceptor y razonReceptor a la vez (alias duplicado en CFE.find)
-        { field: "razonReceptor", operator: "eq", value: values.rutReceptor ? undefined : values.razonReceptor },
+        { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
+        { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
+        { field: "serie", operator: "eq", value: serie },
+        {
+          field: "nro",
+          operator: "eq",
+          value: puntual ? values.nro : undefined,
+        },
+        {
+          field: "rutReceptor",
+          operator: "eq",
+          value: values.rutReceptor?.trim() || undefined,
+        },
+        {
+          field: "razonReceptor",
+          operator: "eq",
+          value: values.razonReceptor?.trim() || undefined,
+        },
       ];
     },
   });
 
-  const direccion = (filters.find((f) => "field" in f && f.field === "direccion")?.value ?? "EMITIDO") as Direccion;
+  const direccion = (filters.find(
+    (f) => "field" in f && f.field === "direccion",
+  )?.value ?? "EMITIDO") as Direccion;
 
   const verDocumento = (doc: Documento) => {
     const tipo = tipoDocByName(doc.tipo);
     if (!tipo) return;
     const params = new URLSearchParams({ direccion });
     const rutEmisor = doc.empresaEmisora?.rut;
-    if (direccion === "RECIBIDO" && rutEmisor) params.set("rutExterno", rutEmisor);
-    navigate(`/documentos/show/${encodeURIComponent(documentoId(tipo.id, doc.serie, doc.nro))}?${params}`);
+    if (direccion === "RECIBIDO" && rutEmisor)
+      params.set("rutExterno", rutEmisor);
+    navigate(
+      `/documentos/show/${encodeURIComponent(documentoId(tipo.id, doc.serie, doc.nro))}?${params}`,
+    );
   };
 
   const pdf = async (doc: Documento) => {
     const tipo = tipoDocByName(doc.tipo);
     if (!tipo || !empresa) return;
-    const emisor = direccion === "RECIBIDO" ? doc.empresaEmisora?.rut : undefined;
+    const emisor =
+      direccion === "RECIBIDO" ? doc.empresaEmisora?.rut : undefined;
     try {
-      await abrirPdf(empresa.rut, { idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro }, emisor);
+      await abrirPdf(
+        empresa.rut,
+        { idTipoDoc: tipo.id, serie: doc.serie, nro: doc.nro },
+        emisor,
+      );
     } catch (error) {
-      open?.({ type: "error", message: "No se pudo obtener el PDF", description: (error as Error).message });
+      open?.({
+        type: "error",
+        message: "No se pudo obtener el PDF",
+        description: (error as Error).message,
+      });
     }
   };
 
-  if (!empresa) return <Typography.Text>Seleccione una empresa.</Typography.Text>;
+  if (!empresa)
+    return <Typography.Text>Seleccione una empresa.</Typography.Text>;
 
   return (
     <List title={`Comprobantes - ${empresa.razon ?? empresa.rut}`}>
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Form {...searchFormProps} layout="inline" initialValues={{ direccion: "EMITIDO" }}>
-          <Form.Item name="direccion">
-            <Segmented
-              options={[
-                { label: "Emitidos", value: "EMITIDO" },
-                { label: "Recibidos", value: "RECIBIDO" },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="fecha" label="Fecha">
-            <DatePicker.RangePicker format="DD/MM/YYYY" />
-          </Form.Item>
-          <Form.Item name="rutReceptor" label="RUT receptor">
-            <Input allowClear style={{ width: 150 }} />
-          </Form.Item>
-          <Form.Item name="razonReceptor" label="Razón receptor">
-            <Input allowClear style={{ width: 180 }} />
-          </Form.Item>
-          <Form.Item name="idTipoDoc" label="Tipo">
-            <Select
-              allowClear
-              style={{ width: 200 }}
-              options={TIPOS_DOC.map((t) => ({ value: t.id, label: `${t.id} - ${t.label}` }))}
-            />
-          </Form.Item>
-          <Form.Item name="serie" label="Serie">
-            <Input allowClear style={{ width: 70 }} />
-          </Form.Item>
-          <Form.Item name="nro" label="Nro">
-            <InputNumber style={{ width: 110 }} />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
-              Buscar
-            </Button>
-          </Form.Item>
-        </Form>
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          Para buscar un comprobante puntual completar tipo, serie y número.
-        </Typography.Text>
-      </Card>
+      <FiltrosComprobantes
+        searchFormProps={searchFormProps}
+        filters={filters}
+        rangoInicial={rangoInicial}
+      />
 
-      <Table {...tableProps} rowKey="id" size="middle" onRow={(doc) => ({ onDoubleClick: () => verDocumento(doc) })}>
+      <Table
+        {...tableProps}
+        rowKey="id"
+        size="middle"
+        onRow={(doc) => ({ onDoubleClick: () => verDocumento(doc) })}
+      >
         <Table.Column<Documento>
           title="Tipo"
           dataIndex="tipo"
           render={(tipo: string) => tipoDocByName(tipo)?.label ?? tipo}
         />
-        <Table.Column<Documento> title="Serie / Nro" render={(_, doc) => `${doc.serie}-${doc.nro}`} />
-        <Table.Column<Documento> title="Fecha" dataIndex="fechaEmision" render={formatFechaApi} />
+        <Table.Column<Documento>
+          title="Serie / Nro"
+          render={(_, doc) => `${doc.serie}-${doc.nro}`}
+        />
+        <Table.Column<Documento>
+          title="Fecha"
+          dataIndex="fechaEmision"
+          render={formatFechaApi}
+        />
         <Table.Column<Documento>
           title={direccion === "EMITIDO" ? "Receptor" : "Emisor"}
           render={(_, doc) =>
             direccion === "EMITIDO"
-              ? etiquetaEmpresa(doc.empresaReceptora) ?? doc.titular?.documento ?? "-"
-              : etiquetaEmpresa(doc.empresaEmisora) ?? "-"
+              ? (etiquetaEmpresa(doc.empresaReceptora) ??
+                doc.titular?.documento ??
+                "-")
+              : (etiquetaEmpresa(doc.empresaEmisora) ?? "-")
           }
         />
         <Table.Column<Documento> title="Moneda" dataIndex="moneda" />
@@ -155,7 +185,12 @@ export function DocumentoList() {
           dataIndex="totMntTotal"
           align="right"
           render={(value?: number) =>
-            value != null ? value.toLocaleString("es-UY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ""
+            value != null
+              ? value.toLocaleString("es-UY", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              : ""
           }
         />
         <Table.Column<Documento>
@@ -163,7 +198,9 @@ export function DocumentoList() {
           dataIndex="estado"
           render={(estado?: string | null) =>
             estado ? (
-              <Tag color={ESTADOS_CFE[estado]?.color}>{ESTADOS_CFE[estado]?.label ?? estado}</Tag>
+              <Tag color={ESTADOS_CFE[estado]?.color}>
+                {ESTADOS_CFE[estado]?.label ?? estado}
+              </Tag>
             ) : (
               <Tag>Sin respuesta</Tag>
             )
@@ -173,8 +210,16 @@ export function DocumentoList() {
           title=""
           render={(_, doc) => (
             <Space>
-              <Button size="small" icon={<EyeOutlined />} onClick={() => verDocumento(doc)} />
-              <Button size="small" icon={<FilePdfOutlined />} onClick={() => pdf(doc)} />
+              <Button
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => verDocumento(doc)}
+              />
+              <Button
+                size="small"
+                icon={<FilePdfOutlined />}
+                onClick={() => pdf(doc)}
+              />
             </Space>
           )}
         />
