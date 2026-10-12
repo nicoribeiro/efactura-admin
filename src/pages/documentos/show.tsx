@@ -96,7 +96,17 @@ export function DocumentoShow() {
     }
   };
 
-  const detalle = doc?.detalle ?? [];
+  // La API no garantiza el orden de las lineas
+  const detalle = [...(doc?.detalle ?? [])].sort(
+    (a, b) => Number(a.nroLinea) - Number(b.nroLinea),
+  );
+  // Columnas de descuento y recargo solo si alguna linea los tiene
+  const conDescuento = detalle.some(
+    (d) => Number(d.descuentoMonto) || Number(d.descuentoPct),
+  );
+  const conRecargo = detalle.some(
+    (d) => Number(d.recargoMonto) || Number(d.recargoPct),
+  );
 
   return (
     <Show
@@ -133,28 +143,6 @@ export function DocumentoShow() {
               {etiquetaEmpresa(doc.empresaReceptora) ??
                 doc.titular?.documento ??
                 "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Moneda">{doc.moneda}</Descriptions.Item>
-            <Descriptions.Item label="Tipo de cambio">
-              {doc.tipoCambio ?? "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Neto no gravado">
-              {monto(doc.totMntNoGrv)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Neto tasa mínima">
-              {monto(doc.totMntIVATasaMin)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Neto tasa básica">
-              {monto(doc.totMntIVATasaBas)}
-            </Descriptions.Item>
-            <Descriptions.Item label="IVA tasa mínima">
-              {monto(doc.mntIVATasaMin)}
-            </Descriptions.Item>
-            <Descriptions.Item label="IVA tasa básica">
-              {monto(doc.mntIVATasaBas)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Total">
-              <Typography.Text strong>{monto(doc.totMntTotal)}</Typography.Text>
             </Descriptions.Item>
             <Descriptions.Item label="Estado DGI">
               {doc.estado ? (
@@ -218,6 +206,28 @@ export function DocumentoShow() {
               align="right"
               render={monto}
             />
+            {conDescuento && (
+              <Table.Column<Record<string, unknown>>
+                title="Descuento"
+                align="right"
+                render={(_, d) =>
+                  Number(d.descuentoMonto)
+                    ? `${monto(Number(d.descuentoMonto))}${Number(d.descuentoPct) ? ` (${Number(d.descuentoPct)}%)` : ""}`
+                    : "-"
+                }
+              />
+            )}
+            {conRecargo && (
+              <Table.Column<Record<string, unknown>>
+                title="Recargo"
+                align="right"
+                render={(_, d) =>
+                  Number(d.recargoMonto)
+                    ? `${monto(Number(d.recargoMonto))}${Number(d.recargoPct) ? ` (${Number(d.recargoPct)}%)` : ""}`
+                    : "-"
+                }
+              />
+            )}
             <Table.Column
               title="Monto"
               dataIndex="montoItem"
@@ -225,6 +235,34 @@ export function DocumentoShow() {
               render={monto}
             />
           </Table>
+
+          <Typography.Title level={5} style={{ marginTop: 24 }}>
+            Totales
+          </Typography.Title>
+          <Descriptions bordered size="small" column={2}>
+            <Descriptions.Item label="Moneda">{doc.moneda}</Descriptions.Item>
+            <Descriptions.Item label="Tipo de cambio">
+              {doc.tipoCambio || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto tasa mínima">
+              {monto(doc.totMntIVATasaMin)}
+            </Descriptions.Item>
+            <Descriptions.Item label="IVA tasa mínima">
+              {monto(doc.mntIVATasaMin)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto tasa básica">
+              {monto(doc.totMntIVATasaBas)}
+            </Descriptions.Item>
+            <Descriptions.Item label="IVA tasa básica">
+              {monto(doc.mntIVATasaBas)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Neto no gravado">
+              {monto(doc.totMntNoGrv)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Total">
+              <Typography.Text strong>{monto(doc.totMntTotal)}</Typography.Text>
+            </Descriptions.Item>
+          </Descriptions>
 
           {empresa && tipo && (
             <>
