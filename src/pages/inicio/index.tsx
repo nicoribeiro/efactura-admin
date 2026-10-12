@@ -20,7 +20,7 @@ import {
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { apiJson } from "../../api/http";
 import { TIPOS_DOC } from "../../constants/cfe";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
@@ -113,6 +113,14 @@ const monto = (n: number) =>
     maximumFractionDigits: 2,
   });
 
+/** Link al listado de comprobantes ya filtrado, con el periodo del tablero */
+const urlComprobantes = (
+  filtros: Record<string, string>,
+  desde: Dayjs,
+  hasta: Dayjs,
+) =>
+  `/documentos?${new URLSearchParams({ ...filtros, desde: desde.format("YYYY-MM-DD"), hasta: hasta.format("YYYY-MM-DD") })}`;
+
 /** Agrupa fechas consecutivas en rangos legibles: "01/10–10/10, 13/10" */
 function rangosDeFechas(fechas: string[]) {
   const ordenadas = [...fechas].sort();
@@ -145,6 +153,7 @@ const ICONOS: Record<Gravedad, ReactNode> = {
 /** Tablero de la empresa seleccionada (solo lectura) */
 export function Inicio() {
   const { empresa } = useEmpresa();
+  const navigate = useNavigate();
   const [rango, setRango] = useState<Rango>(rangoPorDefecto);
   const [datos, setDatos] = useState<Datos>({ errores: {} });
   const [loading, setLoading] = useState(true);
@@ -262,7 +271,10 @@ export function Inicio() {
             {calculo.rechazados} comprobante
             {calculo.rechazados === 1 ? "" : "s"} rechazado
             {calculo.rechazados === 1 ? "" : "s"} por DGI en el período (
-            <Link to="/documentos">ver comprobantes</Link>)
+            <Link to={urlComprobantes({ estado: "BE" }, desde, hasta)}>
+              ver rechazados
+            </Link>
+            )
           </>
         ),
       });
@@ -341,7 +353,7 @@ export function Inicio() {
 
     const orden: Record<Gravedad, number> = { error: 0, warning: 1, info: 2 };
     return lista.sort((a, b) => orden[a.gravedad] - orden[b.gravedad]);
-  }, [empresa, datos, calculo]);
+  }, [empresa, datos, calculo, desde, hasta]);
 
   const filasEmitidos = useMemo(() => {
     const porTipo = new Map<number, FilaTipoEmitidos>();
@@ -416,30 +428,40 @@ export function Inicio() {
     titulo: string;
     valor: number | undefined;
     destacar?: boolean;
+    link?: string;
   }[] = [
-    { titulo: "Emitidos", valor: datos.resumen ? calculo.emitidos : undefined },
+    {
+      titulo: "Emitidos",
+      valor: datos.resumen ? calculo.emitidos : undefined,
+      link: urlComprobantes({ direccion: "EMITIDO" }, desde, hasta),
+    },
     {
       titulo: "Recibidos",
       valor: datos.resumen ? calculo.recibidos : undefined,
+      link: urlComprobantes({ direccion: "RECIBIDO" }, desde, hasta),
     },
     {
       titulo: "Rechazados por DGI",
       valor: datos.resumen ? calculo.rechazados : undefined,
       destacar: calculo.rechazados > 0,
+      link: urlComprobantes({ estado: "BE" }, desde, hasta),
     },
     {
       titulo: "Sin respuesta de DGI",
       valor: datos.resumen ? calculo.sinRespuesta : undefined,
+      link: urlComprobantes({ estado: "SIN" }, desde, hasta),
     },
     {
       titulo: "Emails con error",
       valor: datos.emailsError,
       destacar: (datos.emailsError ?? 0) > 0,
+      link: `/empresas/show/${empresa.rut}`,
     },
     {
       titulo: "Días sin reporte diario",
       valor: datos.reportes ? calculo.sinReporte.length : undefined,
       destacar: calculo.sinReporte.length > 0,
+      link: "/reportes",
     },
   ];
 
@@ -471,7 +493,12 @@ export function Inicio() {
       <Row gutter={[16, 16]}>
         {kpis.map((k) => (
           <Col key={k.titulo} xs={12} md={8} xl={4}>
-            <Card size="small">
+            <Card
+              size="small"
+              hoverable={!!k.link}
+              onClick={k.link ? () => navigate(k.link!) : undefined}
+              style={{ cursor: k.link ? "pointer" : undefined }}
+            >
               {k.valor === undefined && loading ? (
                 <Skeleton active paragraph={false} />
               ) : (

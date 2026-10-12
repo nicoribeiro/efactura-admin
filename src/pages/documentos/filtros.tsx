@@ -22,8 +22,13 @@ import {
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useState } from "react";
-import { TIPOS_DOC } from "../../constants/cfe";
-import { mismoRango, rangosRapidos, type Rango } from "../../utils/rangos";
+import { ESTADOS_FILTRO, TIPOS_DOC } from "../../constants/cfe";
+import {
+  mismoRango,
+  rangoPorDefecto,
+  rangosRapidos,
+  type Rango,
+} from "../../utils/rangos";
 
 const ABIERTO_KEY = "efactura-filtros-comprobantes-abierto";
 
@@ -53,6 +58,12 @@ function resumen(filters: CrudFilters) {
     );
   else tags.push("Todas las fechas");
 
+  const estado = valorFiltro(filters, "estado");
+  if (estado)
+    tags.push(
+      `DGI: ${ESTADOS_FILTRO.find((e) => e.value === estado)?.label ?? estado}`,
+    );
+
   const rut = valorFiltro(filters, "rutReceptor");
   if (rut) tags.push(`RUT ${rut}`);
   const razon = valorFiltro(filters, "razonReceptor");
@@ -75,14 +86,15 @@ function resumen(filters: CrudFilters) {
 interface Props {
   searchFormProps: FormProps;
   filters: CrudFilters;
-  rangoInicial: Rango;
+  /** Valores con los que abre el formulario (por defecto o desde la URL) */
+  valoresIniciales: { direccion: string; fecha: Rango; estado?: string };
 }
 
 /** Filtros del listado de comprobantes, en un panel colapsable */
 export function FiltrosComprobantes({
   searchFormProps,
   filters,
-  rangoInicial,
+  valoresIniciales,
 }: Props) {
   const [abierto, setAbierto] = useState(leerAbierto);
   const form = searchFormProps.form;
@@ -105,7 +117,12 @@ export function FiltrosComprobantes({
 
   const restablecer = () => {
     form?.resetFields();
-    form?.setFieldsValue({ direccion: "EMITIDO", fecha: rangoInicial });
+    // Restablecer vuelve a los valores por defecto (no a los de la URL)
+    form?.setFieldsValue({
+      direccion: "EMITIDO",
+      fecha: rangoPorDefecto(),
+      estado: undefined,
+    });
     form?.submit();
   };
 
@@ -126,7 +143,7 @@ export function FiltrosComprobantes({
     <Form
       {...searchFormProps}
       layout="vertical"
-      initialValues={{ direccion: "EMITIDO", fecha: rangoInicial }}
+      initialValues={valoresIniciales}
     >
       <Row gutter={[16, 0]}>
         <Col xs={24} md={8} lg={6}>
@@ -138,6 +155,9 @@ export function FiltrosComprobantes({
                 { label: "Recibidos", value: "RECIBIDO" },
               ]}
             />
+          </Form.Item>
+          <Form.Item name="estado" label="Estado DGI">
+            <Select allowClear placeholder="Todos" options={ESTADOS_FILTRO} />
           </Form.Item>
         </Col>
         <Col xs={24} md={16} lg={18}>

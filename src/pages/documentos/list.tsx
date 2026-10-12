@@ -2,9 +2,9 @@ import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
 import { Button, Space, Table, Tag, Typography } from "antd";
-import type { Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   ESTADOS_CFE,
   formatFechaApi,
@@ -13,7 +13,7 @@ import {
 } from "../../constants/cfe";
 import { useEmpresa, type EmpresaRef } from "../../contexts/empresa";
 import { documentoId } from "../../providers/dataProvider";
-import { rangoPorDefecto } from "../../utils/rangos";
+import { rangoPorDefecto, type Rango } from "../../utils/rangos";
 import { FiltrosComprobantes } from "./filtros";
 import { abrirPdf } from "./pdf";
 
@@ -45,6 +45,29 @@ interface FiltrosForm {
   nro?: number;
   rutReceptor?: string;
   razonReceptor?: string;
+  estado?: string;
+}
+
+/**
+ * Filtros iniciales desde la URL, para abrir el listado ya filtrado (ej. desde el tablero):
+ * /documentos?estado=BE&desde=2026-09-13&hasta=2026-10-12&direccion=EMITIDO
+ */
+function filtrosDesdeUrl(params: URLSearchParams) {
+  const desde = params.get("desde");
+  const hasta = params.get("hasta");
+  const fecha: Rango =
+    desde && hasta && dayjs(desde).isValid() && dayjs(hasta).isValid()
+      ? [dayjs(desde), dayjs(hasta)]
+      : rangoPorDefecto();
+  const estado = params.get("estado")?.toUpperCase();
+  return {
+    direccion: (params.get("direccion") === "RECIBIDO"
+      ? "RECIBIDO"
+      : "EMITIDO") as Direccion,
+    fecha,
+    estado:
+      estado && ["AE", "BE", "CE", "SIN"].includes(estado) ? estado : undefined,
+  };
 }
 
 export const etiquetaEmpresa = (empresa?: EmpresaRef | null) =>
@@ -55,8 +78,9 @@ export function DocumentoList() {
   const navigate = useNavigate();
   const { open } = useNotification();
 
-  // Por defecto los ultimos 30 dias (se fija al montar la pantalla)
-  const [rangoInicial] = useState(rangoPorDefecto);
+  // Por defecto emitidos de los ultimos 30 dias; la URL puede traer otros filtros (se fija al montar la pantalla)
+  const [searchParams] = useSearchParams();
+  const [inicial] = useState(() => filtrosDesdeUrl(searchParams));
 
   const { tableProps, searchFormProps, filters } = useTable<
     Documento,
@@ -70,8 +94,9 @@ export function DocumentoList() {
     pagination: { pageSize: 20 },
     filters: {
       initial: [
-        { field: "direccion", operator: "eq", value: "EMITIDO" },
-        { field: "fecha", operator: "eq", value: aFiltroFecha(rangoInicial) },
+        { field: "direccion", operator: "eq", value: inicial.direccion },
+        { field: "fecha", operator: "eq", value: aFiltroFecha(inicial.fecha) },
+        { field: "estado", operator: "eq", value: inicial.estado },
       ],
     },
     onSearch: (values): CrudFilters => {
@@ -81,6 +106,7 @@ export function DocumentoList() {
       return [
         { field: "direccion", operator: "eq", value: values.direccion },
         { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
+        { field: "estado", operator: "eq", value: values.estado },
         { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
         { field: "serie", operator: "eq", value: serie },
         {
@@ -146,7 +172,7 @@ export function DocumentoList() {
       <FiltrosComprobantes
         searchFormProps={searchFormProps}
         filters={filters}
-        rangoInicial={rangoInicial}
+        valoresIniciales={inicial}
       />
 
       <Table
