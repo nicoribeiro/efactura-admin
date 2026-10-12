@@ -4,6 +4,7 @@ import { Button, Layout, Segmented, Select, Space, Tag, Tooltip, Typography, the
 import { useEffect, useState } from "react";
 import { estadoFirma, formatFechaCorta } from "../constants/firma";
 import { useEmpresa } from "../contexts/empresa";
+import { BuscarComprobante } from "./BuscarComprobante";
 import { useTema, type ModoTema } from "../contexts/tema";
 
 export function Header() {
@@ -57,8 +58,8 @@ export function Header() {
         )}
       </Space>
       <Space>
+        <BuscarComprobante />
         <Segmented<ModoTema>
-          size="small"
           value={modo}
           onChange={setModo}
           options={[
