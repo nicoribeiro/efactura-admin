@@ -102,12 +102,18 @@ const duracion = (ms?: number | null) =>
         ? `${(ms / 1000).toFixed(1)} s`
         : `${(ms / 60000).toFixed(1)} min`;
 
-/** Cuándo, en relativo, con la fecha exacta al pasar el mouse */
+/**
+ * Diferencia entre el reloj del navegador y el del servidor (ms), para que los tiempos relativos no queden "en el
+ * futuro" cuando el servidor va adelantado. Se actualiza con cada respuesta.
+ */
+let desfaseServidor = 0;
+
+/** Cuándo, en relativo (según el reloj del servidor), con la fecha exacta al pasar el mouse */
 const Cuando = ({ valor }: { valor?: string | null }) => {
   const f = fecha(valor);
   return f ? (
     <Tooltip title={formatFechaApi(valor)}>
-      <span>{f.fromNow()}</span>
+      <span>{f.add(desfaseServidor, "millisecond").fromNow()}</span>
     </Tooltip>
   ) : (
     <Typography.Text type="secondary">Todavía no</Typography.Text>
@@ -127,6 +133,8 @@ export function Procesos() {
     setCargando(true);
     apiJson<Respuesta>("GET", "/procesos")
       .then((r) => {
+        desfaseServidor =
+          Date.now() - (fecha(r.ahora)?.valueOf() ?? Date.now());
         setDatos(r);
         setError(undefined);
       })
