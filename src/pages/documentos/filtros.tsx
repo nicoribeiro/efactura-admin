@@ -79,6 +79,7 @@ function resumen(filters: CrudFilters) {
   else {
     if (etiquetaTipo) tags.push(etiquetaTipo);
     if (serie) tags.push(`Serie ${serie}`);
+    if (nro) tags.push(`Nro ${nro}`);
   }
   return tags;
 }
@@ -236,7 +237,7 @@ export function FiltrosComprobantes({
               <Form.Item
                 name="nro"
                 label="Número"
-                tooltip="Requiere tipo y serie"
+                tooltip="Solo o junto con tipo y serie. Se busca dentro del período elegido"
               >
                 <InputNumber style={{ width: "100%" }} placeholder="Número" />
               </Form.Item>

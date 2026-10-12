@@ -101,19 +101,29 @@ export function DocumentoList() {
       ],
     },
     onSearch: (values): CrudFilters => {
-      // Tipo y serie filtran el listado; con los tres (tipo, serie y numero) la API busca un comprobante puntual
+      // Tipo, serie y numero filtran el listado (cualquiera, solo o combinados). Con los tres juntos la API busca un
+      // unico comprobante: en emitidos sirve, pero en recibidos exige el RUT del emisor, asi que ahi se omite la serie
+      // y el listado filtra por tipo y numero (de todos los emisores)
       const serie = values.serie?.trim() || undefined;
-      const puntual = values.idTipoDoc && serie && values.nro;
+      const recibidoPuntual =
+        values.direccion === "RECIBIDO" &&
+        values.idTipoDoc &&
+        serie &&
+        values.nro;
       return [
         { field: "direccion", operator: "eq", value: values.direccion },
         { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
         { field: "estado", operator: "eq", value: values.estado },
         { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
-        { field: "serie", operator: "eq", value: serie },
+        {
+          field: "serie",
+          operator: "eq",
+          value: recibidoPuntual ? undefined : serie,
+        },
         {
           field: "nro",
           operator: "eq",
-          value: puntual ? values.nro : undefined,
+          value: values.nro ?? undefined,
         },
         {
           field: "rutReceptor",

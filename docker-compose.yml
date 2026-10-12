@@ -13,4 +13,11 @@ services:
       - "${PANEL_PORT:-8080}:80"
     environment:
       API_UPSTREAM: ${API_UPSTREAM:-http://192.168.1.103:9000}
+    # Tambien esta en el Dockerfile, pero Podman construye en formato OCI y ese HEALTHCHECK se descarta; desde compose
+    # se aplica al crear el contenedor (docker ps / podman ps muestran "healthy")
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
