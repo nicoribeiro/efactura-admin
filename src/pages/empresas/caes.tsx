@@ -11,28 +11,19 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { apiJson } from "../../api/http";
 import { formatFechaApi, tipoDocByName } from "../../constants/cfe";
-
-interface CAE {
-  id: number;
-  tipo?: string;
-  idTipoDoc?: number;
-  nro: number;
-  serie: string;
-  inicial: number;
-  fin: number;
-  siguiente: number;
-  fechaVencimiento?: string | null;
-  fechaAnulado?: string | null;
-  total: number;
-  usados: number;
-  disponibles: number;
-  porcentajeUso: number;
-}
-
-type EstadoCAE = "Vigente" | "Vencido" | "Agotado" | "Anulado";
-type Estado = { label: EstadoCAE; color: string };
+import {
+  DIAS_RITMO,
+  emitidosPorTipo,
+  estadoCAE,
+  pronosticoCAE,
+  rangoRitmo,
+  type CAE,
+  type EstadoCAE,
+} from "../../utils/cae";
+import { PronosticoCaeTable } from "./pronosticoCae";
 
 const ESTADOS: EstadoCAE[] = ["Vigente", "Vencido", "Agotado", "Anulado"];
 
@@ -44,18 +35,6 @@ interface Filtros {
 
 const SIN_FILTROS: Filtros = { tipos: [], estados: [], serie: "" };
 
-/** Fechas de la API: "yyyy-MM-dd HH:mm:ss z" */
-const parseFecha = (value?: string | null) =>
-  value ? new Date(value.slice(0, 10) + "T23:59:59") : undefined;
-
-function estadoCAE(cae: CAE): Estado {
-  if (cae.fechaAnulado) return { label: "Anulado", color: "default" };
-  const vence = parseFecha(cae.fechaVencimiento);
-  if (vence && vence < new Date()) return { label: "Vencido", color: "red" };
-  if (cae.disponibles <= 0) return { label: "Agotado", color: "red" };
-  return { label: "Vigente", color: "green" };
-}
-
 /** CAEs de una empresa (solo lectura) */
 export function CaeTable({ rut }: { rut: string }) {
   const { result, query } = useList<CAE>({
@@ -66,6 +45,27 @@ export function CaeTable({ rut }: { rut: string }) {
 
   const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS);
   const caes = useMemo(() => result?.data ?? [], [result]);
+
+  // Ritmo de emision por tipo, para estimar cuando hace falta un CAE nuevo
+  const [emitidos, setEmitidos] = useState<Map<number, number>>();
+  const [errorRitmo, setErrorRitmo] = useState<string>();
+  useEffect(() => {
+    let cancelado = false;
+    apiJson<{ emitidos: { idTipoDoc: number; cantidad: number }[] }>(
+      "GET",
+      `/empresa/${rut}/documentos/resumen`,
+      rangoRitmo(),
+    )
+      .then((r) => !cancelado && setEmitidos(emitidosPorTipo(r.emitidos ?? [])))
+      .catch((e: Error) => !cancelado && setErrorRitmo(e.message));
+    return () => {
+      cancelado = true;
+    };
+  }, [rut]);
+  const pronostico = useMemo(
+    () => (emitidos ? pronosticoCAE(caes, emitidos) : []),
+    [caes, emitidos],
+  );
 
   // Solo se ofrecen los tipos que la empresa tiene
   const tiposDisponibles = useMemo(
@@ -108,6 +108,27 @@ export function CaeTable({ rut }: { rut: string }) {
 
   return (
     <>
+      <Typography.Title level={5} style={{ marginTop: 0 }}>
+        Por tipo de documento
+      </Typography.Title>
+      {errorRitmo ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={`No se pudo calcular el ritmo de emisión de los últimos ${DIAS_RITMO} días`}
+          description={errorRitmo}
+        />
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          <PronosticoCaeTable
+            filas={pronostico}
+            loading={query.isLoading || !emitidos}
+          />
+        </div>
+      )}
+
+      <Typography.Title level={5}>Todos los CAE</Typography.Title>
       <Space wrap style={{ marginBottom: 16 }}>
         <Select
           mode="multiple"

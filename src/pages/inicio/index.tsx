@@ -31,6 +31,15 @@ import {
   rangosRapidos,
   type Rango,
 } from "../../utils/rangos";
+import {
+  DIAS_RITMO,
+  emitidosPorTipo,
+  pronosticoCAE,
+  rangoRitmo,
+  textoPronostico,
+  type CAE,
+} from "../../utils/cae";
+import { PronosticoCaeTable } from "../empresas/pronosticoCae";
 import { GraficoPorDia, type PuntoDia } from "./grafico";
 
 interface FilaEmitidos {
@@ -71,15 +80,6 @@ interface FilaTipoEmitidos {
   otras: number;
 }
 
-interface CAE {
-  tipo?: string;
-  idTipoDoc?: number;
-  fechaVencimiento?: string | null;
-  fechaAnulado?: string | null;
-  disponibles: number;
-  porcentajeUso: number;
-}
-
 interface Carpeta {
   folderName: string;
   ultimaSincronizacion?: string | null;
@@ -88,6 +88,8 @@ interface Carpeta {
 interface Datos {
   resumen?: Resumen;
   caes?: CAE[];
+  /** Emitidos por tipo en los ultimos DIAS_RITMO dias (ritmo de uso de los CAE) */
+  ritmo?: Map<number, number>;
   emailsError?: number;
   carpetas?: Carpeta[];
   reportes?: { fecha: string }[];
@@ -175,6 +177,11 @@ export function Inicio() {
         toDate,
       }),
       caes: apiJson<CAE[]>("GET", `/empresa/${rut}/cae`),
+      ritmo: apiJson<Resumen>(
+        "GET",
+        `/empresa/${rut}/documentos/resumen`,
+        rangoRitmo(),
+      ).then((r) => emitidosPorTipo(r.emitidos ?? [])),
       emailsError: apiJson<{ count: number }>("GET", `/empresa/${rut}/emails`, {
         estado: "PROCESADO_ERROR",
         desde: fromDate,
@@ -241,6 +248,12 @@ export function Inicio() {
     };
   }, [datos, desde, hasta]);
 
+  const pronostico = useMemo(
+    () =>
+      datos.caes ? pronosticoCAE(datos.caes, datos.ritmo ?? new Map()) : [],
+    [datos],
+  );
+
   const avisos = useMemo<Aviso[]>(() => {
     const lista: Aviso[] = [];
     if (!empresa) return lista;
@@ -279,52 +292,44 @@ export function Inicio() {
         ),
       });
 
-    // CAE: para los tipos emitidos en el periodo, sin CAE vigente / casi agotado / por vencer
-    const hoy = dayjs().startOf("day");
-    const tiposEmitidos = new Set(
-      (datos.resumen?.emitidos ?? []).map((f) => f.idTipoDoc),
-    );
-    const vigentes = (datos.caes ?? []).filter(
-      (c) =>
-        !c.fechaAnulado &&
-        c.disponibles > 0 &&
-        c.fechaVencimiento &&
-        !dayjs(c.fechaVencimiento.slice(0, 10)).isBefore(hoy),
+    // CAE: cuando hace falta uno nuevo por tipo (se agota al ritmo actual o vence)
+    const linkCae = (
+      <Link to={`/empresas/show/${empresa.rut}?tab=cae`}>ver CAE</Link>
     );
     const sinVigenteSinUso: string[] = [];
-    for (const idTipo of new Set((datos.caes ?? []).map((c) => c.idTipoDoc))) {
-      const delTipo = vigentes.filter((c) => c.idTipoDoc === idTipo);
-      const nombre = etiquetaTipo(idTipo);
-      if (delTipo.length === 0) {
-        if (tiposEmitidos.has(idTipo!))
+    for (const p of pronostico) {
+      const nombre = etiquetaTipo(p.idTipoDoc, p.tipo);
+      if (p.vigentes === 0) {
+        if (p.gravedad === "error")
           lista.push({
             gravedad: "error",
-            texto: `Sin CAE vigente para ${nombre}`,
+            texto: (
+              <>
+                Sin CAE vigente para {nombre} ({p.emitidos} emitidos en los
+                últimos {DIAS_RITMO} días, {linkCae})
+              </>
+            ),
           });
         else sinVigenteSinUso.push(nombre);
-        continue;
-      }
-      const disponibles = delTipo.reduce((a, c) => a + c.disponibles, 0);
-      const usoMaximo = Math.max(...delTipo.map((c) => c.porcentajeUso));
-      if (delTipo.length === 1 && usoMaximo >= 90)
+      } else if (p.gravedad === "error" || p.gravedad === "warning")
         lista.push({
-          gravedad: "warning",
-          texto: `CAE de ${nombre} al ${usoMaximo}% de uso (quedan ${disponibles} números)`,
-        });
-      const vence = delTipo
-        .map((c) => dayjs(c.fechaVencimiento!.slice(0, 10)))
-        .sort((a, b) => b.valueOf() - a.valueOf())[0];
-      const diasVence = vence.diff(hoy, "day");
-      if (diasVence <= 30)
-        lista.push({
-          gravedad: "warning",
-          texto: `CAE de ${nombre} vence en ${diasVence} días (${vence.format("DD/MM/YYYY")})`,
+          gravedad: p.gravedad,
+          texto: (
+            <>
+              CAE de {nombre}: {textoPronostico(p).toLowerCase()} (
+              {p.limite?.format("DD/MM/YYYY")}
+              {p.motivo === "agota"
+                ? `, quedan ${p.disponibles} números al ritmo de ${p.emitidos} cada ${DIAS_RITMO} días`
+                : ""}
+              , {linkCae})
+            </>
+          ),
         });
     }
     if (sinVigenteSinUso.length > 0)
       lista.push({
         gravedad: "info",
-        texto: `Sin CAE vigente (sin emisiones en el período): ${sinVigenteSinUso.join(", ")}`,
+        texto: `Sin CAE vigente (sin emisiones en los últimos ${DIAS_RITMO} días): ${sinVigenteSinUso.join(", ")}`,
       });
 
     if ((datos.emailsError ?? 0) > 0)
@@ -353,7 +358,7 @@ export function Inicio() {
 
     const orden: Record<Gravedad, number> = { error: 0, warning: 1, info: 2 };
     return lista.sort((a, b) => orden[a.gravedad] - orden[b.gravedad]);
-  }, [empresa, datos, calculo, desde, hasta]);
+  }, [empresa, datos, calculo, pronostico, desde, hasta]);
 
   const filasEmitidos = useMemo(() => {
     const porTipo = new Map<number, FilaTipoEmitidos>();
@@ -649,6 +654,25 @@ export function Inicio() {
             )}
           </Card>
         </Col>
+
+        <Col xs={24}>
+          <Card
+            size="small"
+            title="CAE por tipo de documento"
+            extra={
+              <Link to={`/empresas/show/${empresa.rut}?tab=cae`}>
+                Ver todos los CAE
+              </Link>
+            }
+          >
+            {errorSeccion("caes") ?? (
+              <PronosticoCaeTable
+                filas={pronostico}
+                loading={loading && !datos.caes}
+              />
+            )}
+          </Card>
+        </Col>
       </Row>
 
       <Typography.Paragraph
@@ -656,7 +680,9 @@ export function Inicio() {
         style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}
       >
         Totales por moneda sumados tal cual (las notas de crédito no se restan).
-        El reporte diario se revisa hasta anteayer.
+        El reporte diario se revisa hasta anteayer. El pronóstico de CAE usa el
+        ritmo de emisión de los últimos {DIAS_RITMO} días, sin importar el
+        período elegido.
       </Typography.Paragraph>
     </List>
   );

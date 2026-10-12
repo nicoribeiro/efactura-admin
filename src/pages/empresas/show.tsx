@@ -1,7 +1,7 @@
 import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
 import { Descriptions, Tabs, Tag } from "antd";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
@@ -11,6 +11,8 @@ import { UsuariosTable } from "./usuarios";
 
 export function EmpresaShow() {
   const { id: rut = "" } = useParams();
+  // La pestaña va en la URL (?tab=cae) para poder enlazarla desde el tablero
+  const [params, setParams] = useSearchParams();
   const { result: empresa, query } = useOne<Empresa & { sucursales?: Record<string, unknown>[] }>({
     resource: "empresas",
     id: rut,
@@ -20,6 +22,8 @@ export function EmpresaShow() {
     <Show isLoading={query.isLoading} title={empresa ? `${empresa.rut} - ${empresa.razon ?? ""}` : "Empresa"}>
       {empresa && (
         <Tabs
+          activeKey={params.get("tab") ?? "datos"}
+          onChange={(tab) => setParams({ tab }, { replace: true })}
           items={[
             {
               key: "datos",
