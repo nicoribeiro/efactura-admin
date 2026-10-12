@@ -88,7 +88,16 @@ interface Props {
   searchFormProps: FormProps;
   filters: CrudFilters;
   /** Valores con los que abre el formulario (por defecto o desde la URL) */
-  valoresIniciales: { direccion: string; fecha: Rango; estado?: string };
+  valoresIniciales: {
+    direccion: string;
+    fecha: Rango;
+    estado?: string;
+    idTipoDoc?: number;
+    serie?: string;
+    nro?: number;
+    rutReceptor?: string;
+    razonReceptor?: string;
+  };
 }
 
 /** Filtros del listado de comprobantes, en un panel colapsable */

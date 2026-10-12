@@ -3,7 +3,7 @@ import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
 import { Button, Space, Table, Typography } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
   formatFechaApi,
@@ -50,10 +50,13 @@ interface FiltrosForm {
 }
 
 /**
- * Filtros iniciales desde la URL, para abrir el listado ya filtrado (ej. desde el tablero):
- * /documentos?estado=BE&desde=2026-09-13&hasta=2026-10-12&direccion=EMITIDO
+ * Filtros y pagina en la URL: el listado se puede abrir ya filtrado (ej. desde el tablero) y al volver del detalle
+ * conserva lo que se estaba viendo. Ej: /documentos?direccion=EMITIDO&estado=BE&desde=2026-09-13&hasta=2026-10-12
  */
-function filtrosDesdeUrl(params: URLSearchParams) {
+function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm & {
+  fecha: Rango;
+  page: number;
+} {
   const desde = params.get("desde");
   const hasta = params.get("hasta");
   const fecha: Rango =
@@ -61,6 +64,11 @@ function filtrosDesdeUrl(params: URLSearchParams) {
       ? [dayjs(desde), dayjs(hasta)]
       : rangoPorDefecto();
   const estado = params.get("estado")?.toUpperCase();
+  const numero = (clave: string) => {
+    const n = Number(params.get(clave));
+    return params.get(clave) && Number.isInteger(n) && n > 0 ? n : undefined;
+  };
+  const texto = (clave: string) => params.get(clave)?.trim() || undefined;
   return {
     direccion: (params.get("direccion") === "RECIBIDO"
       ? "RECIBIDO"
@@ -68,7 +76,66 @@ function filtrosDesdeUrl(params: URLSearchParams) {
     fecha,
     estado:
       estado && ["AE", "BE", "CE", "SIN"].includes(estado) ? estado : undefined,
+    idTipoDoc: numero("idTipoDoc"),
+    serie: texto("serie"),
+    nro: numero("nro"),
+    rutReceptor: texto("rutReceptor"),
+    razonReceptor: texto("razonReceptor"),
+    page: numero("page") ?? 1,
   };
+}
+
+function filtrosAUrl(valores: FiltrosForm, page: number) {
+  const params = new URLSearchParams({ direccion: valores.direccion });
+  if (valores.fecha?.[0] && valores.fecha?.[1]) {
+    params.set("desde", valores.fecha[0].format("YYYY-MM-DD"));
+    params.set("hasta", valores.fecha[1].format("YYYY-MM-DD"));
+  }
+  const opcionales = {
+    estado: valores.estado,
+    idTipoDoc: valores.idTipoDoc,
+    serie: valores.serie?.trim(),
+    nro: valores.nro,
+    rutReceptor: valores.rutReceptor?.trim(),
+    razonReceptor: valores.razonReceptor?.trim(),
+  };
+  for (const [clave, valor] of Object.entries(opcionales))
+    if (valor !== undefined && valor !== null && valor !== "")
+      params.set(clave, String(valor));
+  if (page > 1) params.set("page", String(page));
+  return params;
+}
+
+/** Valores del formulario -> filtros de la API */
+function aFiltros(values: FiltrosForm): CrudFilters {
+  // Tipo, serie y numero filtran el listado (cualquiera, solo o combinados). Con los tres juntos la API busca un
+  // unico comprobante: en emitidos sirve, pero en recibidos exige el RUT del emisor, asi que ahi se omite la serie
+  // y el listado filtra por tipo y numero (de todos los emisores)
+  const serie = values.serie?.trim() || undefined;
+  const recibidoPuntual =
+    values.direccion === "RECIBIDO" && values.idTipoDoc && serie && values.nro;
+  return [
+    { field: "direccion", operator: "eq", value: values.direccion },
+    { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
+    { field: "estado", operator: "eq", value: values.estado },
+    { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
+    {
+      field: "serie",
+      operator: "eq",
+      value: recibidoPuntual ? undefined : serie,
+    },
+    { field: "nro", operator: "eq", value: values.nro ?? undefined },
+    {
+      field: "rutReceptor",
+      operator: "eq",
+      value: values.rutReceptor?.trim() || undefined,
+    },
+    {
+      field: "razonReceptor",
+      operator: "eq",
+      value: values.razonReceptor?.trim() || undefined,
+    },
+  ];
 }
 
 export const etiquetaEmpresa = (empresa?: EmpresaRef | null) =>
@@ -79,9 +146,11 @@ export function DocumentoList() {
   const navigate = useNavigate();
   const { open } = useNotification();
 
-  // Por defecto emitidos de los ultimos 30 dias; la URL puede traer otros filtros (se fija al montar la pantalla)
-  const [searchParams] = useSearchParams();
+  // Por defecto emitidos de los ultimos 30 dias; la URL puede traer filtros y pagina (se leen al montar la pantalla)
+  const [searchParams, setSearchParams] = useSearchParams();
   const [inicial] = useState(() => filtrosDesdeUrl(searchParams));
+  // Ultimos valores buscados (los del formulario, no los filtros: en recibidos la serie puede no ir a la API)
+  const buscados = useRef<FiltrosForm>(inicial);
 
   const { tableProps, searchFormProps, filters } = useTable<
     Documento,
@@ -92,52 +161,21 @@ export function DocumentoList() {
     syncWithLocation: false,
     meta: { rut: empresa?.rut },
     queryOptions: { enabled: !!empresa },
-    pagination: { pageSize: 20 },
-    filters: {
-      initial: [
-        { field: "direccion", operator: "eq", value: inicial.direccion },
-        { field: "fecha", operator: "eq", value: aFiltroFecha(inicial.fecha) },
-        { field: "estado", operator: "eq", value: inicial.estado },
-      ],
-    },
-    onSearch: (values): CrudFilters => {
-      // Tipo, serie y numero filtran el listado (cualquiera, solo o combinados). Con los tres juntos la API busca un
-      // unico comprobante: en emitidos sirve, pero en recibidos exige el RUT del emisor, asi que ahi se omite la serie
-      // y el listado filtra por tipo y numero (de todos los emisores)
-      const serie = values.serie?.trim() || undefined;
-      const recibidoPuntual =
-        values.direccion === "RECIBIDO" &&
-        values.idTipoDoc &&
-        serie &&
-        values.nro;
-      return [
-        { field: "direccion", operator: "eq", value: values.direccion },
-        { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
-        { field: "estado", operator: "eq", value: values.estado },
-        { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
-        {
-          field: "serie",
-          operator: "eq",
-          value: recibidoPuntual ? undefined : serie,
-        },
-        {
-          field: "nro",
-          operator: "eq",
-          value: values.nro ?? undefined,
-        },
-        {
-          field: "rutReceptor",
-          operator: "eq",
-          value: values.rutReceptor?.trim() || undefined,
-        },
-        {
-          field: "razonReceptor",
-          operator: "eq",
-          value: values.razonReceptor?.trim() || undefined,
-        },
-      ];
+    pagination: { pageSize: 20, currentPage: inicial.page },
+    filters: { initial: aFiltros(inicial) },
+    onSearch: (values) => {
+      buscados.current = values;
+      return aFiltros(values);
     },
   });
+
+  // Filtros y pagina a la URL (sin agregar entradas al historial), para que "volver" desde el detalle los recupere
+  const pagina = tableProps.pagination
+    ? (tableProps.pagination.current ?? 1)
+    : 1;
+  useEffect(() => {
+    setSearchParams(filtrosAUrl(buscados.current, pagina), { replace: true });
+  }, [filters, pagina, setSearchParams]);
 
   const direccion = (filters.find(
     (f) => "field" in f && f.field === "direccion",

@@ -12,7 +12,7 @@ import {
   Typography,
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { formatFechaApi } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
@@ -43,8 +43,13 @@ const aFiltroFecha = (fecha?: Rango | null) =>
     ? [fecha[0].startOf("day").toDate(), fecha[1].endOf("day").toDate()]
     : undefined;
 
-/** Filtros iniciales desde la URL: /sobres?direccion=EMITIDO&estado=BS&desde=2026-09-01&hasta=2026-09-30 */
-function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm {
+/**
+ * Filtros y pagina en la URL (para abrir el listado ya filtrado y conservarlos al volver del detalle):
+ * /sobres?direccion=EMITIDO&estado=BS&desde=2026-09-01&hasta=2026-09-30&page=2
+ */
+function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm & {
+  page: number;
+} {
   const desde = params.get("desde");
   const hasta = params.get("hasta");
   const estado = params.get("estado")?.toUpperCase();
@@ -55,7 +60,19 @@ function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm {
         ? [dayjs(desde), dayjs(hasta)]
         : rangoPorDefecto(),
     estado: estado && ["AS", "BS", "SIN"].includes(estado) ? estado : undefined,
+    page: Math.max(1, Number(params.get("page")) || 1),
   };
+}
+
+function filtrosAUrl(valores: FiltrosForm, page: number) {
+  const params = new URLSearchParams({ direccion: valores.direccion });
+  if (valores.fecha?.[0] && valores.fecha?.[1]) {
+    params.set("desde", valores.fecha[0].format("YYYY-MM-DD"));
+    params.set("hasta", valores.fecha[1].format("YYYY-MM-DD"));
+  }
+  if (valores.estado) params.set("estado", valores.estado);
+  if (page > 1) params.set("page", String(page));
+  return params;
 }
 
 const aFiltros = (valores: FiltrosForm): CrudFilters => [
@@ -68,8 +85,9 @@ const aFiltros = (valores: FiltrosForm): CrudFilters => [
 export function SobreList() {
   const { empresa } = useEmpresa();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [inicial] = useState(() => filtrosDesdeUrl(searchParams));
+  const buscados = useRef<FiltrosForm>(inicial);
 
   const { tableProps, searchFormProps, filters } = useTable<
     SobreResumen,
@@ -80,10 +98,21 @@ export function SobreList() {
     syncWithLocation: false,
     meta: { rut: empresa?.rut },
     queryOptions: { enabled: !!empresa },
-    pagination: { pageSize: 20 },
+    pagination: { pageSize: 20, currentPage: inicial.page },
     filters: { initial: aFiltros(inicial) },
-    onSearch: aFiltros,
+    onSearch: (valores) => {
+      buscados.current = valores;
+      return aFiltros(valores);
+    },
   });
+
+  // Filtros y pagina a la URL (sin agregar entradas al historial), para que "volver" desde el detalle los recupere
+  const pagina = tableProps.pagination
+    ? (tableProps.pagination.current ?? 1)
+    : 1;
+  useEffect(() => {
+    setSearchParams(filtrosAUrl(buscados.current, pagina), { replace: true });
+  }, [filters, pagina, setSearchParams]);
 
   const direccion = (filters.find(
     (f) => "field" in f && f.field === "direccion",
