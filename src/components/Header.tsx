@@ -3,6 +3,7 @@ import { useGetIdentity, useLogout } from "@refinedev/core";
 import { Button, Layout, Segmented, Select, Space, Tag, Tooltip, Typography, theme } from "antd";
 import { useEffect, useState } from "react";
 import { estadoFirma, formatFechaCorta } from "../constants/firma";
+import { Link } from "react-router";
 import { useEmpresa } from "../contexts/empresa";
 import { BuscarComprobante } from "./BuscarComprobante";
 import { useTema, type ModoTema } from "../contexts/tema";
@@ -68,7 +69,11 @@ export function Header() {
             { value: "sistema", icon: <Tooltip title="Según el sistema"><DesktopOutlined /></Tooltip> },
           ]}
         />
-        <Typography.Text>{identity?.name}</Typography.Text>
+        <Tooltip title="Cambiar contraseña">
+          <Link to="/cambiar-password">
+            <Typography.Text>{identity?.name}</Typography.Text>
+          </Link>
+        </Tooltip>
         <Button icon={<LogoutOutlined />} onClick={() => logout()}>
           Salir
         </Button>

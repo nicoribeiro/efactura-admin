@@ -48,24 +48,44 @@ async function toHttpError(response: Response): Promise<HttpError> {
 }
 
 /**
- * El panel es de solo lectura: solo GET, salvo el login. Ademas se bloquean los GET de la API que tienen efectos
- * (consultan DGI y actualizan estados, o envian mails).
+ * El panel es de solo lectura salvo una lista explicita de escrituras: el login, la administracion de usuarios (solo
+ * ADMIN en la API) y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar
+ * a la API. Ademas se bloquean los GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails).
  */
-const POST_PERMITIDOS = [/^\/signin$/];
+const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
+  { method: "POST", path: /^\/signin$/ },
+  // Administracion de usuarios
+  { method: "POST", path: /^\/usuarios$/ },
+  { method: "PUT", path: /^\/usuarios\/\d+$/ },
+  { method: "POST", path: /^\/usuarios\/\d+\/password$/ },
+  { method: "PUT", path: /^\/usuarios\/\d+\/activo$/ },
+  { method: "POST", path: /^\/usuarios\/\d+\/sesiones\/cerrar$/ },
+  { method: "POST", path: /^\/usuarios\/\d+\/credenciales$/ },
+  { method: "PUT", path: /^\/users\/\d+\/empresas\/\d+$/ },
+  { method: "DELETE", path: /^\/users\/\d+\/empresas\/\d+$/ },
+  // Contrasena propia
+  { method: "PUT", path: /^\/cuenta\/password$/ },
+];
 const GET_CON_EFECTOS = [
   /\/documentos\/resultado$/, // consulta DGI y actualiza el estado del CFE
   /\/resultados\/[^/]+$/, // idem para todos los CFE de una fecha
   /\/documentos\/enviarCfeEmpresa$/, // envia el CFE por mail al receptor
   /\/sobre\/enviarSobreEmpresa$/, // envia el sobre por mail
+  /\/credentials\/regenerate$/, // regenera credenciales (GET con efecto)
 ];
 
 function verificarSoloLectura(method: string, path: string) {
   const permitido =
     method === "GET"
       ? !GET_CON_EFECTOS.some((re) => re.test(path))
-      : method === "POST" && POST_PERMITIDOS.some((re) => re.test(path));
+      : ESCRITURAS_PERMITIDAS.some(
+          (e) => e.method === method && e.path.test(path),
+        );
   if (!permitido)
-    throw { message: `El panel es de solo lectura: ${method} ${path} no está permitido`, statusCode: 405 } as HttpError;
+    throw {
+      message: `El panel no permite ${method} ${path}`,
+      statusCode: 405,
+    } as HttpError;
 }
 
 /** Tiempo maximo de espera de la API (incluye la descarga de la respuesta). Configurable con VITE_API_TIMEOUT_MS. */

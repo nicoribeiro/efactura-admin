@@ -1,6 +1,8 @@
+import { UserAddOutlined } from "@ant-design/icons";
 import { List } from "@refinedev/antd";
 import {
   Alert,
+  Button,
   Card,
   Col,
   Input,
@@ -15,41 +17,21 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { apiJson } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { navegador } from "../../utils/userAgent";
+import { cuentaActual } from "../../providers/authProvider";
+import { AccionesUsuario } from "./acciones";
+import { FormularioUsuario } from "./formulario";
+import { MostrarSecreto } from "./secreto";
 import { SesionesUsuario } from "./sesiones";
+import type { Usuario } from "./tipos";
 
 dayjs.extend(relativeTime);
 
 type Modo = "OFF" | "LOG" | "ENFORCE";
-
-interface UltimaSesion {
-  creada?: string | null;
-  ultimoAcceso?: string | null;
-  ip?: string | null;
-  userAgent?: string | null;
-  vigente: boolean;
-}
-
-interface Usuario {
-  id: number;
-  emailAddress: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  role: "ADMIN" | "USER";
-  creado?: string | null;
-  accesoTotal: boolean;
-  empresas: { rut: string; razon?: string | null }[];
-  sesiones: {
-    total: number;
-    vigentes: number;
-    vencidas: number;
-    ultima: UltimaSesion | null;
-  };
-}
 
 interface Respuesta {
   seguridad: {
@@ -84,10 +66,20 @@ export function Usuarios() {
   }>();
   const [texto, setTexto] = useState("");
   const [rol, setRol] = useState<string>();
+  const [estado, setEstado] = useState<"activos" | "desactivados">();
+  const [miId, setMiId] = useState<number>();
+  // Formulario: undefined = cerrado, null = alta, usuario = edicion
+  const [formulario, setFormulario] = useState<Usuario | null>();
+  const [creado, setCreado] = useState<{ email: string; password: string }>();
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     apiJson<Respuesta>("GET", "/usuarios").then(setDatos).catch(setError);
   }, []);
+
+  useEffect(() => {
+    cargar();
+    cuentaActual().then((c) => setMiId(c?.id));
+  }, [cargar]);
 
   const usuarios = useMemo(() => {
     const t = texto.trim().toLowerCase();
@@ -95,6 +87,7 @@ export function Usuarios() {
       .filter(
         (u) =>
           (!rol || u.role === rol) &&
+          (!estado || (estado === "activos") === (u.activo !== false)) &&
           (!t ||
             [u.emailAddress, u.firstName, u.lastName]
               .filter(Boolean)
@@ -104,7 +97,7 @@ export function Usuarios() {
         (a, b) =>
           (ultimoUso(b)?.valueOf() ?? 0) - (ultimoUso(a)?.valueOf() ?? 0),
       );
-  }, [datos, texto, rol]);
+  }, [datos, texto, rol, estado]);
 
   if (error)
     return (
@@ -132,7 +125,18 @@ export function Usuarios() {
   const conVencidas = todos.filter((u) => u.sesiones.vencidas > 0);
 
   return (
-    <List title="Usuarios">
+    <List
+      title="Usuarios"
+      headerButtons={
+        <Button
+          type="primary"
+          icon={<UserAddOutlined />}
+          onClick={() => setFormulario(null)}
+        >
+          Nuevo usuario
+        </Button>
+      }
+    >
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} lg={12}>
           <Card
@@ -219,6 +223,17 @@ export function Usuarios() {
             { value: "USER", label: "Usuario" },
           ]}
         />
+        <Select
+          allowClear
+          placeholder="Estado"
+          style={{ width: 160 }}
+          value={estado}
+          onChange={setEstado}
+          options={[
+            { value: "activos", label: "Activos" },
+            { value: "desactivados", label: "Desactivados" },
+          ]}
+        />
         <Typography.Text type="secondary">
           {usuarios.length} de {todos.length}
         </Typography.Text>
@@ -231,6 +246,9 @@ export function Usuarios() {
         loading={!datos}
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         scroll={{ x: true }}
+        onRow={(u) => ({
+          style: u.activo === false ? { opacity: 0.55 } : undefined,
+        })}
         expandable={{
           // Las sesiones se piden al expandir la fila
           expandedRowRender: (u) => <SesionesUsuario uid={u.id} />,
@@ -247,6 +265,16 @@ export function Usuarios() {
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 {u.emailAddress}
               </Typography.Text>
+              {(u.activo === false || u.debeCambiarPassword) && (
+                <div style={{ marginTop: 2 }}>
+                  {u.activo === false && <Tag>Desactivado</Tag>}
+                  {u.debeCambiarPassword && (
+                    <Tooltip title="Todavía no cambió la contraseña temporal">
+                      <Tag color="gold">Contraseña temporal</Tag>
+                    </Tooltip>
+                  )}
+                </div>
+              )}
             </div>
           )}
         />
@@ -349,7 +377,35 @@ export function Usuarios() {
             u.creado ? formatFechaApi(u.creado).slice(0, 10) : "-"
           }
         />
+        <Table.Column<Usuario>
+          title=""
+          render={(_, u) => (
+            <AccionesUsuario
+              usuario={u}
+              esYo={u.id === miId}
+              onEditar={() => setFormulario(u)}
+              onCambio={cargar}
+            />
+          )}
+        />
       </Table>
+      {formulario !== undefined && (
+        <FormularioUsuario
+          usuario={formulario ?? undefined}
+          esYo={!!formulario && formulario.id === miId}
+          onCerrar={() => setFormulario(undefined)}
+          onGuardado={cargar}
+          onCreado={(email, password) => setCreado({ email, password })}
+        />
+      )}
+      {creado && (
+        <MostrarSecreto
+          titulo={`Usuario ${creado.email} creado`}
+          valores={[{ label: "Contraseña temporal", valor: creado.password }]}
+          aviso="Pasásela al usuario por un medio seguro. Al ingresar va a tener que cambiarla."
+          onCerrar={() => setCreado(undefined)}
+        />
+      )}
     </List>
   );
 }

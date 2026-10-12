@@ -25,7 +25,7 @@ import routerProvider, {
 import { App as AntdApp } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import { STATUS_TIMEOUT } from "./api/http";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
@@ -43,7 +43,8 @@ import { EmpresaShow } from "./pages/empresas/show";
 import { SobreList } from "./pages/sobres/list";
 import { SobreShow } from "./pages/sobres/show";
 import { accessControlProvider } from "./providers/accessControlProvider";
-import { authProvider } from "./providers/authProvider";
+import { authProvider, debeCambiarPassword } from "./providers/authProvider";
+import { CambiarPassword } from "./pages/cuenta/cambiarPassword";
 import { dataProvider } from "./providers/dataProvider";
 import { i18nProvider } from "./providers/i18nProvider";
 
@@ -146,15 +147,20 @@ export default function App() {
                     key="app"
                     fallback={<CatchAllNavigate to="/login" />}
                   >
-                    <EmpresaProvider>
-                      <ThemedLayout
-                        Header={Header}
-                        Title={Title}
-                        Footer={Footer}
-                      >
-                        <Outlet />
-                      </ThemedLayout>
-                    </EmpresaProvider>
+                    {/* Con contrasena temporal solo se puede cambiarla (la API rechaza el resto) */}
+                    {debeCambiarPassword() ? (
+                      <Navigate to="/cambiar-password" replace />
+                    ) : (
+                      <EmpresaProvider>
+                        <ThemedLayout
+                          Header={Header}
+                          Title={Title}
+                          Footer={Footer}
+                        >
+                          <Outlet />
+                        </ThemedLayout>
+                      </EmpresaProvider>
+                    )}
                   </Authenticated>
                 }
               >
@@ -181,6 +187,17 @@ export default function App() {
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>
+              <Route
+                path="/cambiar-password"
+                element={
+                  <Authenticated
+                    key="cambio"
+                    fallback={<CatchAllNavigate to="/login" />}
+                  >
+                    <CambiarPassword />
+                  </Authenticated>
+                }
+              />
               <Route
                 element={
                   <Authenticated key="auth" fallback={<Outlet />}>
