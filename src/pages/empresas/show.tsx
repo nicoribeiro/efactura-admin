@@ -1,11 +1,17 @@
+import { EditOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
-import { Descriptions, Tabs, Tag } from "antd";
+import { Button, Descriptions, Space, Tabs, Tag } from "antd";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
+import { rolUsuario } from "../../providers/authProvider";
+import { EditarEmpresa } from "./editarEmpresa";
 import { EmailsTable } from "./emails";
+import { CargarFirma } from "./firma";
+import { LogoEmpresa } from "./logo";
 import { SucursalesTable } from "./sucursales";
 import { UsuariosTable } from "./usuarios";
 
@@ -17,6 +23,13 @@ export function EmpresaShow() {
     resource: "empresas",
     id: rut,
   });
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [cargandoFirma, setCargandoFirma] = useState(false);
+
+  useEffect(() => {
+    rolUsuario().then((r) => setEsAdmin(r === "ADMIN"));
+  }, []);
 
   return (
     <Show isLoading={query.isLoading} title={empresa ? `${empresa.rut} - ${empresa.razon ?? ""}` : "Empresa"}>
@@ -29,6 +42,17 @@ export function EmpresaShow() {
               key: "datos",
               label: "Datos",
               children: (
+                <>
+                {esAdmin && (
+                  <Space style={{ marginBottom: 16 }} wrap>
+                    <Button icon={<EditOutlined />} onClick={() => setEditando(true)}>
+                      Editar datos
+                    </Button>
+                    <Button icon={<SafetyCertificateOutlined />} onClick={() => setCargandoFirma(true)}>
+                      Cargar firma digital
+                    </Button>
+                  </Space>
+                )}
                 <Descriptions bordered size="small" column={2}>
                   <Descriptions.Item label="RUT">{empresa.rut}</Descriptions.Item>
                   <Descriptions.Item label="Razón social">{empresa.razon}</Descriptions.Item>
@@ -44,6 +68,9 @@ export function EmpresaShow() {
                     {empresa.hostRecepcion ? `${empresa.hostRecepcion}:${empresa.puertoRecepcion ?? ""}` : "-"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Usuario IMAP">{empresa.userRecepcion}</Descriptions.Item>
+                  <Descriptions.Item label="Remitente de envíos" span={2}>
+                    {empresa.fromEnvio}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Firma digital">
                     <Tag color={estadoFirma(empresa.firmaDigital).color}>{estadoFirma(empresa.firmaDigital).label}</Tag>
                   </Descriptions.Item>
@@ -52,7 +79,26 @@ export function EmpresaShow() {
                       ? `${formatFechaCorta(empresa.firmaDigital.validaDesde)} al ${formatFechaCorta(empresa.firmaDigital.validaHasta)}`
                       : "-"}
                   </Descriptions.Item>
+                  <Descriptions.Item label="Logo (PDF)" span={2}>
+                    <LogoEmpresa
+                      rut={empresa.rut}
+                      tieneLogo={empresa.tieneLogo}
+                      esAdmin={esAdmin}
+                      onCambiado={() => query.refetch()}
+                    />
+                  </Descriptions.Item>
                 </Descriptions>
+                {editando && (
+                  <EditarEmpresa empresa={empresa} onCerrar={() => setEditando(false)} onGuardada={() => query.refetch()} />
+                )}
+                {cargandoFirma && (
+                  <CargarFirma
+                    rut={empresa.rut}
+                    onCerrar={() => setCargandoFirma(false)}
+                    onCargada={() => query.refetch()}
+                  />
+                )}
+                </>
               ),
             },
             {

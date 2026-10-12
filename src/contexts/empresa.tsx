@@ -13,8 +13,11 @@ export interface Empresa {
   puertoRecepcion?: string;
   userRecepcion?: string;
   mailNotificaciones?: string;
+  fromEnvio?: string;
   paginaWeb?: string;
   resolucion?: string;
+  /** Tiene logo cargado (GET /empresa/:rut/logo) */
+  tieneLogo?: boolean;
   firmaDigital?: FirmaDigital | null;
 }
 

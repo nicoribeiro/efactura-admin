@@ -49,8 +49,8 @@ async function toHttpError(response: Response): Promise<HttpError> {
 
 /**
  * El panel es de solo lectura salvo una lista explicita de escrituras: el login, la administracion de usuarios (solo
- * ADMIN en la API), la carga de CAE, el reporte diario, la consulta a DGI de un comprobante y el cambio de la
- * contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
+ * ADMIN en la API), los datos de la empresa y sus sucursales, la carga de CAE, el reporte diario, la consulta a DGI de un
+ * comprobante y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
  * GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails), salvo los de esta lista.
  */
 const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
@@ -66,6 +66,10 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "DELETE", path: /^\/users\/\d+\/empresas\/\d+$/ },
   // Carga de CAE (XML de DGI)
   { method: "POST", path: /^\/empresa\/\d+\/cae$/ },
+  // Datos de la empresa (logo y firma digital incluidos) y sus sucursales
+  { method: "PUT", path: /^\/empresa\/\d+$/ },
+  { method: "POST", path: /^\/empresa\/\d+\/sucursales$/ },
+  { method: "PUT", path: /^\/empresa\/\d+\/sucursales\/\d+$/ },
   // Reporte diario a DGI (de a un dia)
   { method: "POST", path: /^\/empresa\/\d+\/reporteDiario\/\d{8}$/ },
   // Consulta a DGI del resultado de un comprobante (GET con efecto: actualiza su estado)
