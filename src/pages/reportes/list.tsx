@@ -15,10 +15,12 @@ import { useEffect, useMemo, useState } from "react";
 import { apiJson } from "../../api/http";
 import { XmlCode } from "../../components/XmlCode";
 import { useEmpresa } from "../../contexts/empresa";
+import { rolUsuario } from "../../providers/authProvider";
 import { mismoRango, rangoPorDefecto, rangosRapidos } from "../../utils/rangos";
 import { parsearReporte } from "../../utils/reporte";
 import { ReporteDetalle } from "./detalle";
 import { tagEstadoReporte } from "./estado";
+import { GenerarReportes } from "./generar";
 
 /** ReporteDiarioSerializer */
 interface ReporteDiario {
@@ -36,15 +38,33 @@ interface Fila {
   key: string;
   fecha: string;
   reporte?: ReporteDiario;
+  /** Primera fila del dia (la del reporte mas reciente) */
+  primera: boolean;
 }
 
 const MAX_DIAS = 62;
+
+/** La API no genera el reporte de un dia hasta 43 horas despues de su comienzo (en produccion) */
+const HORAS_MINIMAS = 43;
+
+/** Ya se puede generar el reporte del dia (yyyy-MM-dd) */
+const generable = (fecha: string) =>
+  dayjs().diff(dayjs(fecha), "hour") > HORAS_MINIMAS;
 
 /** Cantidad de comprobantes informados (carátula del XML del reporte) */
 const cantidadComprobantes = (reporte: ReporteDiario) =>
   parsearReporte(reporte.xml)?.caratula.CantComprobantes ?? "-";
 
-/** Reportes diarios enviados a DGI por la empresa seleccionada (solo lectura) */
+/**
+ * El dia ya esta aceptado por DGI: como en la API, cuenta el reporte mas reciente con respuesta (o el mas reciente si
+ * ninguno tiene)
+ */
+const aceptado = (delDia: ReporteDiario[]) => {
+  const ultimo = delDia.find((r) => r.estado) ?? delDia[0];
+  return ultimo?.estado === "AR";
+};
+
+/** Reportes diarios enviados a DGI por la empresa seleccionada; un ADMIN puede generar los que faltan */
 export function ReporteDiarioList() {
   const { empresa } = useEmpresa();
   // Por defecto los ultimos 30 dias
@@ -52,6 +72,18 @@ export function ReporteDiarioList() {
   const [reportes, setReportes] = useState<ReporteDiario[]>([]);
   const [error, setError] = useState<{ message?: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [recarga, setRecarga] = useState(0);
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [aGenerar, setAGenerar] = useState<{
+    fechas: string[];
+    soloFaltantes: boolean;
+    /** Secuencial del reporte que reemplaza al aceptado (al regenerar un dia aceptado) */
+    reemplaza?: number;
+  }>();
+
+  useEffect(() => {
+    rolUsuario().then((r) => setEsAdmin(r === "ADMIN"));
+  }, []);
 
   const [desde, hasta] = rango;
   const dias = hasta.startOf("day").diff(desde.startOf("day"), "day") + 1;
@@ -75,11 +107,15 @@ export function ReporteDiarioList() {
     return () => {
       cancelado = true;
     };
-  }, [empresa, desde, dias]);
+  }, [empresa, desde, dias, recarga]);
 
   // Una fila por dia (del mas nuevo al mas viejo); los dias sin reporte quedan visibles como "Sin reporte"
-  const filas = useMemo<Fila[]>(() => {
+  const { filas, faltantes, reemplazos } = useMemo(() => {
     const resultado: Fila[] = [];
+    // Dias sin reporte aceptado que ya se pueden generar, del mas viejo al mas nuevo
+    const faltantes: string[] = [];
+    // Dias aceptados: secuencial del reporte que se enviaria al regenerarlos
+    const reemplazos: Record<string, number> = {};
     for (
       let d = hasta.startOf("day");
       !d.isBefore(desde.startOf("day"));
@@ -90,12 +126,26 @@ export function ReporteDiarioList() {
       const delDia = reportes
         .filter((r) => r.fecha === fecha)
         .sort((a, b) => b.secuencial - a.secuencial);
-      if (delDia.length === 0) resultado.push({ key: fecha, fecha });
+      if (!aceptado(delDia) && generable(fecha)) faltantes.unshift(fecha);
+      // Como la API: el nuevo secuencial es el mayor aceptado + 1
+      if (aceptado(delDia))
+        reemplazos[fecha] =
+          Math.max(
+            ...delDia.filter((r) => r.estado === "AR").map((r) => r.secuencial),
+          ) + 1;
+      if (delDia.length === 0)
+        resultado.push({ key: fecha, fecha, primera: true });
       else
-        for (const reporte of delDia)
-          resultado.push({ key: `${fecha}-${reporte.id}`, fecha, reporte });
+        delDia.forEach((reporte, i) =>
+          resultado.push({
+            key: `${fecha}-${reporte.id}`,
+            fecha,
+            reporte,
+            primera: i === 0,
+          }),
+        );
     }
-    return resultado;
+    return { filas: resultado, faltantes, reemplazos };
   }, [reportes, desde, hasta]);
 
   if (!empresa)
@@ -125,6 +175,16 @@ export function ReporteDiarioList() {
         <Typography.Text type="secondary">
           Hasta {MAX_DIAS} días.
         </Typography.Text>
+        {esAdmin && (
+          <Button
+            disabled={loading || !!error || faltantes.length === 0}
+            onClick={() =>
+              setAGenerar({ fechas: faltantes, soloFaltantes: true })
+            }
+          >
+            Generar faltantes ({faltantes.length})
+          </Button>
+        )}
       </Space>
       <Space style={{ marginBottom: 16, display: "flex" }} wrap size={[8, 8]}>
         {rangosRapidos().map(({ label, value }) => (
@@ -224,7 +284,40 @@ export function ReporteDiarioList() {
             )
           }
         />
+        {esAdmin && (
+          <Table.Column<Fila>
+            title="Acción"
+            render={(_, fila) =>
+              fila.primera && generable(fila.fecha) ? (
+                <Button
+                  size="small"
+                  variant="solid"
+                  color={fila.reporte ? "orange" : "primary"}
+                  onClick={() =>
+                    setAGenerar({
+                      fechas: [fila.fecha],
+                      soloFaltantes: false,
+                      reemplaza: reemplazos[fila.fecha],
+                    })
+                  }
+                >
+                  {fila.reporte ? "Regenerar" : "Generar"}
+                </Button>
+              ) : null
+            }
+          />
+        )}
       </Table>
+      {aGenerar && (
+        <GenerarReportes
+          rut={empresa.rut}
+          fechas={aGenerar.fechas}
+          soloFaltantes={aGenerar.soloFaltantes}
+          reemplaza={aGenerar.reemplaza}
+          onCerrar={() => setAGenerar(undefined)}
+          onTerminado={() => setRecarga((n) => n + 1)}
+        />
+      )}
     </List>
   );
 }
