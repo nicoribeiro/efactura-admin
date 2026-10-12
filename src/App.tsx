@@ -1,4 +1,4 @@
-import { BankOutlined, FileTextOutlined } from "@ant-design/icons";
+import { BankOutlined, CalendarOutlined, FileTextOutlined } from "@ant-design/icons";
 import { AuthPage, ErrorComponent, ThemedLayout, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 import { Authenticated, Refine } from "@refinedev/core";
@@ -14,6 +14,7 @@ import { EmpresaProvider } from "./contexts/empresa";
 import { DocumentoList } from "./pages/documentos/list";
 import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
+import { ReporteDiarioList } from "./pages/reportes/list";
 import { EmpresaShow } from "./pages/empresas/show";
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
@@ -40,6 +41,11 @@ export default function App() {
                 list: "/documentos",
                 show: "/documentos/show/:id",
                 meta: { label: "Comprobantes", icon: <FileTextOutlined /> },
+              },
+              {
+                name: "reportes",
+                list: "/reportes",
+                meta: { label: "Reporte diario", icon: <CalendarOutlined /> },
               },
               {
                 name: "empresas",
@@ -88,6 +94,7 @@ export default function App() {
                   <Route index element={<DocumentoList />} />
                   <Route path="show/:id" element={<DocumentoShow />} />
                 </Route>
+                <Route path="/reportes" element={<ReporteDiarioList />} />
                 <Route path="/empresas">
                   <Route index element={<EmpresaList />} />
                   <Route path="show/:id" element={<EmpresaShow />} />
