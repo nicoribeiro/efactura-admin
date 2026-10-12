@@ -24,6 +24,9 @@ import {
   type EstadoCAE,
 } from "../../utils/cae";
 import { PronosticoCaeTable } from "./pronosticoCae";
+import { CargarCae } from "./cargarCae";
+import { rolUsuario } from "../../providers/authProvider";
+import { UploadOutlined } from "@ant-design/icons";
 
 const ESTADOS: EstadoCAE[] = ["Vigente", "Vencido", "Agotado", "Anulado"];
 
@@ -45,6 +48,13 @@ export function CaeTable({ rut }: { rut: string }) {
 
   const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS);
   const caes = useMemo(() => result?.data ?? [], [result]);
+
+  // Carga de CAE: solo ADMIN
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  useEffect(() => {
+    rolUsuario().then((r) => setEsAdmin(r === "ADMIN"));
+  }, []);
 
   // Ritmo de emision por tipo, para estimar cuando hace falta un CAE nuevo
   const [emitidos, setEmitidos] = useState<Map<number, number>>();
@@ -108,9 +118,30 @@ export function CaeTable({ rut }: { rut: string }) {
 
   return (
     <>
-      <Typography.Title level={5} style={{ marginTop: 0 }}>
-        Por tipo de documento
-      </Typography.Title>
+      <Space
+        style={{
+          width: "100%",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
+        <Typography.Title level={5} style={{ margin: 0 }}>
+          Por tipo de documento
+        </Typography.Title>
+        {esAdmin && (
+          <Button icon={<UploadOutlined />} onClick={() => setCargando(true)}>
+            Cargar CAE
+          </Button>
+        )}
+      </Space>
+      {cargando && (
+        <CargarCae
+          rut={rut}
+          existentes={caes}
+          onCerrar={() => setCargando(false)}
+          onCargados={() => query.refetch()}
+        />
+      )}
       {errorRitmo ? (
         <Alert
           type="warning"

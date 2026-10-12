@@ -63,6 +63,8 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "POST", path: /^\/usuarios\/\d+\/credenciales$/ },
   { method: "PUT", path: /^\/users\/\d+\/empresas\/\d+$/ },
   { method: "DELETE", path: /^\/users\/\d+\/empresas\/\d+$/ },
+  // Carga de CAE (XML de DGI)
+  { method: "POST", path: /^\/empresa\/\d+\/cae$/ },
   // Contrasena propia
   { method: "PUT", path: /^\/cuenta\/password$/ },
 ];
