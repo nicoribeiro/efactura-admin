@@ -9,14 +9,15 @@ import {
   tipoDocByName,
 } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
-import { etiquetaEmpresa, type Documento } from "./list";
+import { etiquetaEmpresa } from "./list";
 import { abrirPdf } from "./pdf";
 import { rechazoDgi } from "../../utils/dgi";
 import { RechazoDgiAlert } from "./rechazo";
+import { ReferenciasDocumento, type DocumentoConReferencia } from "./referencias";
 import { SobreDocumentoInfo } from "./sobre";
 import { useSobreDocumento } from "./useSobre";
 
-interface DocumentoDetalle extends Documento {
+interface DocumentoDetalle extends DocumentoConReferencia {
   fechaGeneracion?: string;
   vencimiento?: string | null;
   tipoCambio?: number;
@@ -165,6 +166,17 @@ export function DocumentoShow() {
               </Descriptions.Item>
             )}
           </Descriptions>
+
+          {empresa && referencia && (
+            <ReferenciasDocumento
+              rut={empresa.rut}
+              doc={doc}
+              documento={referencia}
+              direccion={direccion === "RECIBIDO" ? "RECIBIDO" : "EMITIDO"}
+              rutExterno={rutExterno}
+              sobre={sobre}
+            />
+          )}
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             Detalle
