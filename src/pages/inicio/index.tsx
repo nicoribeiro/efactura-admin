@@ -22,7 +22,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { apiJson } from "../../api/http";
-import { TIPOS_DOC } from "../../constants/cfe";
+import { TIPOS_DOC, tipoDocByName } from "../../constants/cfe";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import { useEmpresa } from "../../contexts/empresa";
 import { useTema } from "../../contexts/tema";
@@ -40,7 +40,10 @@ import {
   textoPronostico,
   type CAE,
 } from "../../utils/cae";
+import { documentoId } from "../../providers/dataProvider";
+import { obtenerSobreDocumento } from "../documentos/useSobre";
 import { PronosticoCaeTable } from "../empresas/pronosticoCae";
+import { INFO as INFO_PROCESOS } from "../procesos/info";
 import { GraficoPorDia, type PuntoDia } from "./grafico";
 import { RechazadosCard } from "./rechazados";
 
@@ -87,6 +90,36 @@ interface Carpeta {
   ultimaSincronizacion?: string | null;
 }
 
+/** Emitido sin respuesta de DGI despues de la hora que DGI indico para consultarla */
+interface SinRespuestaDgi {
+  idTipoDoc: number;
+  tipo: string;
+  serie: string;
+  nro: number;
+  fechaEmision: string;
+}
+
+/** GET /procesos (solo ADMIN) */
+interface EstadoProcesos {
+  inicioInstancia: string;
+  ahora: string;
+  procesos: {
+    nombre: string;
+    activo: boolean;
+    intervaloSegundos: number;
+    ultimoInicio?: string | null;
+    enEjecucion: boolean;
+    ultimoError?: string | null;
+    ultimoErrorFecha?: string | null;
+  }[];
+}
+
+/** Margen despues de la hora de respuesta de DGI antes de avisar (lerandsys consulta apenas pasa la hora) */
+const MARGEN_RESPUESTA_DGI_MIN = 60;
+
+/** "yyyy-MM-dd HH:mm:ss z" de la API */
+const fechaApi = (v?: string | null) => (v ? dayjs(v.slice(0, 19)) : undefined);
+
 interface Datos {
   resumen?: Resumen;
   caes?: CAE[];
@@ -98,6 +131,10 @@ interface Datos {
   usdAyer?: number | null;
   uis?: { anio: number }[];
   reportes?: { fecha: string }[];
+  /** Emitidos sin respuesta de DGI pasada la hora de consulta + margen (de los 50 mas recientes sin respuesta) */
+  sinRespuestaDgi?: SinRespuestaDgi[];
+  /** null si el usuario no es ADMIN (la API no le muestra los procesos) */
+  procesos?: EstadoProcesos | null;
   errores: Record<string, string>;
 }
 
@@ -231,6 +268,42 @@ export function Inicio() {
           cantReportes: dias,
         },
       ).then((r) => (r ?? []).flat()),
+      // Sin importar el periodo: lo que esta pendiente ahora. La hora de cada uno sale de su sobre.
+      sinRespuestaDgi: apiJson<{
+        results: { tipo: string; serie: string; nro: number; fechaEmision: string }[];
+      }>("GET", `/empresa/${rut}/documentos`, {
+        direccion: "EMITIDO",
+        estado: "SIN",
+        fromDate: 0,
+        toDate: Math.floor(Date.now() / 1000) + 86400,
+        page: 1,
+        pageSize: 50,
+      }).then(async (r) => {
+        const ahora = dayjs();
+        const revisados = await Promise.allSettled(
+          r.results.map(async (d) => {
+            const idTipoDoc = tipoDocByName(d.tipo)?.id;
+            if (!idTipoDoc) return null;
+            const { sobre } = await obtenerSobreDocumento(
+              rut,
+              { idTipoDoc, serie: d.serie, nro: d.nro },
+              "EMITIDO",
+            );
+            // Solo los sobres recibidos por DGI (AS): los rechazados no van a tener respuesta
+            const desdeConsulta = fechaApi(sobre?.fechaConsulta);
+            return sobre?.estadoDgi === "AS" &&
+              desdeConsulta &&
+              ahora.diff(desdeConsulta, "minute") > MARGEN_RESPUESTA_DGI_MIN
+              ? { idTipoDoc, ...d }
+              : null;
+          }),
+        );
+        return revisados.flatMap((x) =>
+          x.status === "fulfilled" && x.value ? [x.value] : [],
+        );
+      }),
+      // Solo ADMIN: para el resto la API lo rechaza y no se avisa nada
+      procesos: apiJson<EstadoProcesos>("GET", "/procesos").catch(() => null),
     };
 
     // Cada seccion es independiente: si una falla se muestra su error y el resto del tablero sigue
@@ -373,7 +446,12 @@ export function Inicio() {
           <>
             {datos.emailsError} email{datos.emailsError === 1 ? "" : "s"}{" "}
             recibido{datos.emailsError === 1 ? "" : "s"} con error en el período
-            (<Link to={`/empresas/show/${empresa.rut}`}>ver en la empresa</Link>
+            (
+            <Link
+              to={`/empresas/show/${empresa.rut}?tab=emails&estado=PROCESADO_ERROR`}
+            >
+              ver emails con error
+            </Link>
             )
           </>
         ),
@@ -413,6 +491,71 @@ export function Inicio() {
           </>
         ),
       });
+
+    const sinRespuesta = datos.sinRespuestaDgi ?? [];
+    if (sinRespuesta.length > 0) {
+      const nombre = (d: SinRespuestaDgi) =>
+        `${etiquetaTipo(d.idTipoDoc, d.tipo)} ${d.serie}-${d.nro}`;
+      const masViejo = sinRespuesta
+        .map((d) => d.fechaEmision.slice(0, 10))
+        .sort()[0];
+      lista.push({
+        gravedad: "warning",
+        texto: (
+          <>
+            {sinRespuesta.length === 1
+              ? `${nombre(sinRespuesta[0])} sigue sin respuesta de DGI`
+              : `${sinRespuesta.length} comprobantes siguen sin respuesta de DGI`}{" "}
+            más de una hora después de la hora indicada por DGI (
+            <Link
+              to={
+                sinRespuesta.length === 1
+                  ? `/documentos/show/${encodeURIComponent(documentoId(sinRespuesta[0].idTipoDoc, sinRespuesta[0].serie, sinRespuesta[0].nro))}?direccion=EMITIDO`
+                  : urlComprobantes({ estado: "SIN" }, dayjs(masViejo), dayjs())
+              }
+            >
+              {sinRespuesta.length === 1 ? "ver comprobante" : "ver sin respuesta"}
+            </Link>
+            )
+          </>
+        ),
+      });
+    }
+
+    // Procesos (solo ADMIN): ultima ejecucion con error, o sin ejecutarse hace mas de 3 intervalos
+    if (datos.procesos) {
+      const ahoraApi = fechaApi(datos.procesos.ahora) ?? dayjs();
+      const inicioInstancia = fechaApi(datos.procesos.inicioInstancia);
+      for (const p of datos.procesos.procesos.filter((p) => p.activo)) {
+        const titulo = INFO_PROCESOS[p.nombre]?.titulo ?? p.nombre;
+        const inicio = fechaApi(p.ultimoInicio);
+        const error = fechaApi(p.ultimoErrorFecha);
+        const link = <Link to="/procesos">ver procesos</Link>;
+        if (error && (!inicio || !error.isBefore(inicio)))
+          lista.push({
+            gravedad: "error",
+            texto: (
+              <>
+                Proceso «{titulo}»: falló la última ejecución
+                {p.ultimoError ? ` (${p.ultimoError})` : ""} ({link})
+              </>
+            ),
+          });
+        const limiteMin = Math.max(10, (3 * p.intervaloSegundos) / 60);
+        const ultimo = inicio ?? inicioInstancia;
+        if (!p.enEjecucion && ultimo && ahoraApi.diff(ultimo, "minute") > limiteMin)
+          lista.push({
+            gravedad: "warning",
+            texto: (
+              <>
+                Proceso «{titulo}»: no se ejecuta desde{" "}
+                {inicio ? `hace ${ahoraApi.diff(inicio, "minute")} minutos` : "que arrancó la API"}{" "}
+                ({link})
+              </>
+            ),
+          });
+      }
+    }
 
     const orden: Record<Gravedad, number> = { error: 0, warning: 1, info: 2 };
     return lista.sort((a, b) => orden[a.gravedad] - orden[b.gravedad]);

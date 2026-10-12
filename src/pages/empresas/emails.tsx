@@ -22,6 +22,7 @@ import {
 } from "antd";
 import type { Dayjs } from "dayjs";
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
@@ -145,6 +146,10 @@ function DescargarAdjunto({
 
 /** Emails recibidos por una empresa (solo lectura) */
 export function EmailsTable({ rut }: { rut: string }) {
+  // ?estado=PROCESADO_ERROR (link de "Atención" en el tablero)
+  const [params] = useSearchParams();
+  const estadoInicial = params.get("estado") as EstadoAdjunto | null;
+
   const { tableProps, searchFormProps, tableQuery } = useTable<
     EmailRecibido,
     HttpError,
@@ -155,7 +160,14 @@ export function EmailsTable({ rut }: { rut: string }) {
     meta: { rut },
     pagination: { pageSize: 20 },
     // Por defecto solo los emails con adjuntos
-    filters: { initial: [{ field: "adjuntos", operator: "eq", value: "si" }] },
+    filters: {
+      initial: [
+        { field: "adjuntos", operator: "eq", value: "si" },
+        ...(estadoInicial
+          ? [{ field: "estado", operator: "eq" as const, value: estadoInicial }]
+          : []),
+      ],
+    },
     onSearch: (values): CrudFilters => [
       {
         field: "adjuntos",
@@ -193,7 +205,7 @@ export function EmailsTable({ rut }: { rut: string }) {
         {...searchFormProps}
         layout="inline"
         style={{ marginBottom: 16, rowGap: 8 }}
-        initialValues={{ adjuntos: "si" }}
+        initialValues={{ adjuntos: "si", estado: estadoInicial ?? undefined }}
       >
         <Form.Item name="adjuntos" label="Adjuntos">
           <Select<FiltroAdjuntos>
