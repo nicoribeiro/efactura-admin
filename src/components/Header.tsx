@@ -1,19 +1,14 @@
-import { DesktopOutlined, LogoutOutlined, MoonOutlined, SunOutlined, WarningOutlined } from "@ant-design/icons";
-import { useGetIdentity, useLogout } from "@refinedev/core";
-import { Button, Layout, Segmented, Select, Space, Tag, Tooltip, Typography, theme } from "antd";
+import { WarningOutlined } from "@ant-design/icons";
+import { Layout, Select, Space, Tag, Tooltip, Typography, theme } from "antd";
 import { useEffect, useState } from "react";
 import { estadoFirma, formatFechaCorta } from "../constants/firma";
-import { Link } from "react-router";
 import { useEmpresa } from "../contexts/empresa";
 import { BuscarComprobante } from "./BuscarComprobante";
-import { useTema, type ModoTema } from "../contexts/tema";
+import { MenuUsuario } from "./MenuUsuario";
 
 export function Header() {
   const { opciones, empresa, setRut, buscar, loading } = useEmpresa();
-  const { data: identity } = useGetIdentity<{ name: string }>();
-  const { mutate: logout } = useLogout();
   const [texto, setTexto] = useState("");
-  const { modo, setModo } = useTema();
   const { token } = theme.useToken();
 
   // Busqueda en el servidor con un pequeño retardo para no consultar en cada tecla
@@ -60,23 +55,7 @@ export function Header() {
       </Space>
       <Space>
         <BuscarComprobante />
-        <Segmented<ModoTema>
-          value={modo}
-          onChange={setModo}
-          options={[
-            { value: "claro", icon: <Tooltip title="Tema claro"><SunOutlined /></Tooltip> },
-            { value: "oscuro", icon: <Tooltip title="Tema oscuro"><MoonOutlined /></Tooltip> },
-            { value: "sistema", icon: <Tooltip title="Según el sistema"><DesktopOutlined /></Tooltip> },
-          ]}
-        />
-        <Tooltip title="Cambiar contraseña">
-          <Link to="/cambiar-password">
-            <Typography.Text>{identity?.name}</Typography.Text>
-          </Link>
-        </Tooltip>
-        <Button icon={<LogoutOutlined />} onClick={() => logout()}>
-          Salir
-        </Button>
+        <MenuUsuario />
       </Space>
     </Layout.Header>
   );
