@@ -8,6 +8,28 @@ interface SessionResponse {
   valid: boolean;
 }
 
+export type Rol = "ADMIN" | "USER";
+
+/**
+ * Rol del usuario logueado, pedido una vez por sesion (GET /users/:email, su propio perfil). De la respuesta solo se
+ * guarda el rol: el perfil trae tambien las credenciales HMAC, que el panel no usa.
+ */
+let rolCache: { token: string; rol: Promise<Rol | null> } | null = null;
+
+export function rolUsuario(): Promise<Rol | null> {
+  const token = tokenStorage.get();
+  const email = localStorage.getItem(EMAIL_KEY);
+  if (!token || !email) return Promise.resolve(null);
+  if (rolCache?.token !== token)
+    rolCache = {
+      token,
+      rol: apiJson<{ role?: Rol }>("GET", `/users/${encodeURIComponent(email)}`)
+        .then((u) => u.role ?? null)
+        .catch(() => null),
+    };
+  return rolCache.rol;
+}
+
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
@@ -27,6 +49,7 @@ export const authProvider: AuthProvider = {
   },
 
   logout: async () => {
+    rolCache = null;
     tokenStorage.clear();
     localStorage.removeItem(EMAIL_KEY);
     return { success: true, redirectTo: "/login" };
@@ -34,6 +57,8 @@ export const authProvider: AuthProvider = {
 
   check: async () =>
     tokenStorage.get() ? { authenticated: true } : { authenticated: false, redirectTo: "/login", logout: true },
+
+  getPermissions: async () => rolUsuario(),
 
   getIdentity: async () => {
     const email = localStorage.getItem(EMAIL_KEY);
