@@ -15,6 +15,7 @@ import { documentoId } from "../../providers/dataProvider";
 import { rangoPorDefecto, type Rango } from "../../utils/rangos";
 import { FiltrosComprobantes } from "./filtros";
 import { abrirPdf } from "./pdf";
+import { ExportarCsv } from "./exportar";
 import { EstadoDgiTag } from "./rechazo";
 
 /** Rango del formulario -> filtro: desde el inicio del primer dia hasta el final del ultimo */
@@ -168,7 +169,16 @@ export function DocumentoList() {
     return <Typography.Text>Seleccione una empresa.</Typography.Text>;
 
   return (
-    <List title={`Comprobantes - ${empresa.razon ?? empresa.rut}`}>
+    <List
+      title={`Comprobantes - ${empresa.razon ?? empresa.rut}`}
+      headerButtons={
+        <ExportarCsv
+          rut={empresa.rut}
+          filters={filters}
+          total={tableProps.pagination ? (tableProps.pagination.total ?? 0) : 0}
+        />
+      }
+    >
       <FiltrosComprobantes
         searchFormProps={searchFormProps}
         filters={filters}
