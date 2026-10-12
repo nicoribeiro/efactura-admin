@@ -23,6 +23,7 @@ const es: Record<string, string> = {
   "documentos.titles.list": "Comprobantes",
   "documentos.titles.show": "Comprobante",
   "reportes.titles.list": "Reporte diario",
+  "inicio.titles.list": "Inicio",
   "actions.list": "Listado",
   "actions.show": "Ver",
 };

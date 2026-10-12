@@ -1,8 +1,23 @@
-import { BankOutlined, CalendarOutlined, FileTextOutlined } from "@ant-design/icons";
-import { AuthPage, ErrorComponent, ThemedLayout, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
+import {
+  BankOutlined,
+  CalendarOutlined,
+  DashboardOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
+import {
+  AuthPage,
+  ErrorComponent,
+  ThemedLayout,
+  ThemedTitle,
+  useNotificationProvider,
+} from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 import { Authenticated, Refine } from "@refinedev/core";
-import routerProvider, { CatchAllNavigate, DocumentTitleHandler, NavigateToResource } from "@refinedev/react-router";
+import routerProvider, {
+  CatchAllNavigate,
+  DocumentTitleHandler,
+  NavigateToResource,
+} from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider } from "antd";
 import esES from "antd/locale/es_ES";
 import dayjs from "dayjs";
@@ -12,6 +27,7 @@ import { STATUS_TIMEOUT } from "./api/http";
 import { Header } from "./components/Header";
 import { EmpresaProvider } from "./contexts/empresa";
 import { DocumentoList } from "./pages/documentos/list";
+import { Inicio } from "./pages/inicio";
 import { DocumentoShow } from "./pages/documentos/show";
 import { EmpresaList } from "./pages/empresas/list";
 import { ReporteDiarioList } from "./pages/reportes/list";
@@ -22,7 +38,9 @@ import { i18nProvider } from "./providers/i18nProvider";
 
 dayjs.locale("es");
 
-const Title = ({ collapsed }: { collapsed: boolean }) => <ThemedTitle collapsed={collapsed} text="efactura" />;
+const Title = ({ collapsed }: { collapsed: boolean }) => (
+  <ThemedTitle collapsed={collapsed} text="efactura" />
+);
 
 export default function App() {
   return (
@@ -36,6 +54,11 @@ export default function App() {
             routerProvider={routerProvider}
             notificationProvider={useNotificationProvider}
             resources={[
+              {
+                name: "inicio",
+                list: "/inicio",
+                meta: { label: "Inicio", icon: <DashboardOutlined /> },
+              },
               {
                 name: "documentos",
                 list: "/documentos",
@@ -65,8 +88,14 @@ export default function App() {
                       // Sin respuesta de la API ya se esperaron API_TIMEOUT_MS: a lo sumo un reintento,
                       // y ninguno para errores del cliente (4xx). Antes eran 3 reintentos (~2 min de spinner).
                       retry: (failureCount, error) => {
-                        const status = (error as { statusCode?: number })?.statusCode;
-                        if (status !== undefined && status >= 400 && status < 500 && status !== STATUS_TIMEOUT)
+                        const status = (error as { statusCode?: number })
+                          ?.statusCode;
+                        if (
+                          status !== undefined &&
+                          status >= 400 &&
+                          status < 500 &&
+                          status !== STATUS_TIMEOUT
+                        )
                           return false;
                         return failureCount < 1;
                       },
@@ -80,7 +109,10 @@ export default function App() {
             <Routes>
               <Route
                 element={
-                  <Authenticated key="app" fallback={<CatchAllNavigate to="/login" />}>
+                  <Authenticated
+                    key="app"
+                    fallback={<CatchAllNavigate to="/login" />}
+                  >
                     <EmpresaProvider>
                       <ThemedLayout Header={Header} Title={Title}>
                         <Outlet />
@@ -89,7 +121,11 @@ export default function App() {
                   </Authenticated>
                 }
               >
-                <Route index element={<NavigateToResource resource="documentos" />} />
+                <Route
+                  index
+                  element={<NavigateToResource resource="inicio" />}
+                />
+                <Route path="/inicio" element={<Inicio />} />
                 <Route path="/documentos">
                   <Route index element={<DocumentoList />} />
                   <Route path="show/:id" element={<DocumentoShow />} />
@@ -104,7 +140,7 @@ export default function App() {
               <Route
                 element={
                   <Authenticated key="auth" fallback={<Outlet />}>
-                    <NavigateToResource resource="documentos" />
+                    <NavigateToResource resource="inicio" />
                   </Authenticated>
                 }
               >
