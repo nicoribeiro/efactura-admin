@@ -41,6 +41,7 @@ import {
 } from "../../utils/cae";
 import { PronosticoCaeTable } from "../empresas/pronosticoCae";
 import { GraficoPorDia, type PuntoDia } from "./grafico";
+import { RechazadosCard } from "./rechazados";
 
 interface FilaEmitidos {
   tipo: string;
@@ -560,6 +561,15 @@ export function Inicio() {
                 />
               ))}
           </Card>
+        </Col>
+
+        <Col xs={24}>
+          <RechazadosCard
+            rut={empresa.rut}
+            desde={desde}
+            hasta={hasta}
+            urlListado={urlComprobantes({ estado: "BE" }, desde, hasta)}
+          />
         </Col>
 
         <Col xs={24} xl={14}>
