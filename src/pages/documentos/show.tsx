@@ -13,6 +13,8 @@ import { useEmpresa } from "../../contexts/empresa";
 import { etiquetaEmpresa } from "./list";
 import { ConsultaDgi } from "./consultaDgi";
 import { abrirPdf } from "./pdf";
+import { EnviosMail } from "./enviosMail";
+import { ReenviarMail } from "./reenviarMail";
 import { rechazoDgi } from "../../utils/dgi";
 import { RechazoDgiAlert } from "./rechazo";
 import {
@@ -64,6 +66,8 @@ export function DocumentoShow() {
   const tipo = tipoDocByName(doc?.tipo);
   // Se incrementa cuando DGI responde, para recargar el sobre
   const [recargaSobre, setRecargaSobre] = useState(0);
+  // Se incrementa al reenviar por mail, para recargar el historial de envios
+  const [recargaEnvios, setRecargaEnvios] = useState(0);
 
   // El sobre se carga una vez: lo usan el aviso de rechazo (arriba) y la seccion Sobre (abajo)
   const referencia =
@@ -117,9 +121,18 @@ export function DocumentoShow() {
           : "Comprobante"
       }
       headerButtons={() => (
-        <Button icon={<FilePdfOutlined />} onClick={pdf} disabled={!doc}>
-          PDF
-        </Button>
+        <Space>
+          {direccion === "EMITIDO" && empresa && referencia && (
+            <ReenviarMail
+              rut={empresa.rut}
+              documento={referencia}
+              onEnviado={() => setRecargaEnvios((n) => n + 1)}
+            />
+          )}
+          <Button icon={<FilePdfOutlined />} onClick={pdf} disabled={!doc}>
+            PDF
+          </Button>
+        </Space>
       )}
     >
       {doc && (
@@ -263,6 +276,21 @@ export function DocumentoShow() {
               <Typography.Text strong>{monto(doc.totMntTotal)}</Typography.Text>
             </Descriptions.Item>
           </Descriptions>
+
+          {empresa && referencia && (
+            <>
+              <Typography.Title level={5} style={{ marginTop: 24 }}>
+                Envíos por mail
+              </Typography.Title>
+              {direccion === "EMITIDO" ? (
+                <EnviosMail rut={empresa.rut} documento={referencia} recarga={recargaEnvios} />
+              ) : sobre.data?.sobre?.id ? (
+                <EnviosMail rut={empresa.rut} sobreId={sobre.data.sobre.id} />
+              ) : (
+                <Typography.Text type="secondary">Sin sobre</Typography.Text>
+              )}
+            </>
+          )}
 
           {empresa && tipo && (
             <>
