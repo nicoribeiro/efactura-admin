@@ -11,6 +11,7 @@ import { RechazoDgiAlert } from "../documentos/rechazo";
 import { SobreDocumentoInfo } from "../documentos/sobre";
 import { EstadoSobreTag } from "./componentes";
 import { RespuestaCfeEstado } from "../documentos/respuestaCfe";
+import { EmpresaConRutDgi } from "../../components/RutDgi";
 import {
   etiquetaComprobante,
   type ComprobanteResumen,
@@ -90,11 +91,19 @@ export function SobreShow() {
               {formatFechaDia(sobre.fecha) || "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Emisor">
-              {etiquetaEmpresa(sobre.empresaEmisora) ?? "-"}
+              <EmpresaConRutDgi
+                etiqueta={etiquetaEmpresa(sobre.empresaEmisora) ?? "-"}
+                rut={sobre.empresaEmisora?.rut}
+              />
             </Descriptions.Item>
             <Descriptions.Item label="Receptor">
-              {etiquetaEmpresa(sobre.empresaReceptora) ??
-                (emitido ? "DGI" : "-")}
+              <EmpresaConRutDgi
+                etiqueta={
+                  etiquetaEmpresa(sobre.empresaReceptora) ??
+                  (emitido ? "DGI" : "-")
+                }
+                rut={sobre.empresaReceptora?.rut}
+              />
             </Descriptions.Item>
             {emitido ? (
               <Descriptions.Item label="Estado DGI">

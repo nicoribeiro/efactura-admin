@@ -8,6 +8,7 @@ import { estadoFirma, formatFechaCorta } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
 import { CaeTable } from "./caes";
 import { rolUsuario } from "../../providers/authProvider";
+import { BotonRutDgi } from "../../components/RutDgi";
 import { EditarEmpresa } from "./editarEmpresa";
 import { EmailsTable } from "./emails";
 import { CargarFirma } from "./firma";
@@ -43,16 +44,19 @@ export function EmpresaShow() {
               label: "Datos",
               children: (
                 <>
-                {esAdmin && (
-                  <Space style={{ marginBottom: 16 }} wrap>
-                    <Button icon={<EditOutlined />} onClick={() => setEditando(true)}>
-                      Editar datos
-                    </Button>
-                    <Button icon={<SafetyCertificateOutlined />} onClick={() => setCargandoFirma(true)}>
-                      Cargar firma digital
-                    </Button>
-                  </Space>
-                )}
+                <Space style={{ marginBottom: 16 }} wrap>
+                  <BotonRutDgi rut={empresa.rut} texto="Datos en DGI" size="middle" />
+                  {esAdmin && (
+                    <>
+                      <Button icon={<EditOutlined />} onClick={() => setEditando(true)}>
+                        Editar datos
+                      </Button>
+                      <Button icon={<SafetyCertificateOutlined />} onClick={() => setCargandoFirma(true)}>
+                        Cargar firma digital
+                      </Button>
+                    </>
+                  )}
+                </Space>
                 <Descriptions bordered size="small" column={2}>
                   <Descriptions.Item label="RUT">{empresa.rut}</Descriptions.Item>
                   <Descriptions.Item label="Razón social">{empresa.razon}</Descriptions.Item>

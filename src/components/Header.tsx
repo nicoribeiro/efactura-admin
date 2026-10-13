@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { estadoFirma, formatFechaCorta } from "../constants/firma";
 import { useEmpresa } from "../contexts/empresa";
 import { BuscarComprobante } from "./BuscarComprobante";
+import { ConsultarRut } from "./RutDgi";
 import { MenuUsuario } from "./MenuUsuario";
 
 export function Header() {
@@ -55,6 +56,7 @@ export function Header() {
       </Space>
       <Space>
         <BuscarComprobante />
+        <ConsultarRut />
         <MenuUsuario />
       </Space>
     </Layout.Header>

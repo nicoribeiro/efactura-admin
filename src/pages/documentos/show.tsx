@@ -23,6 +23,7 @@ import {
 } from "./referencias";
 import { SobreDocumentoInfo } from "./sobre";
 import { RechazoComercial, RespuestaCfeEstado } from "./respuestaCfe";
+import { EmpresaConRutDgi } from "../../components/RutDgi";
 import { useSobreDocumento } from "./useSobre";
 
 interface DocumentoDetalle extends DocumentoConReferencia {
@@ -200,12 +201,20 @@ export function DocumentoShow() {
               {formatFechaDia(doc.fechaGeneracion)}
             </Descriptions.Item>
             <Descriptions.Item label="Emisor">
-              {etiquetaEmpresa(doc.empresaEmisora) ?? "-"}
+              <EmpresaConRutDgi
+                etiqueta={etiquetaEmpresa(doc.empresaEmisora) ?? "-"}
+                rut={doc.empresaEmisora?.rut}
+              />
             </Descriptions.Item>
             <Descriptions.Item label="Receptor">
-              {etiquetaEmpresa(doc.empresaReceptora) ??
-                doc.titular?.documento ??
-                "-"}
+              <EmpresaConRutDgi
+                etiqueta={
+                  etiquetaEmpresa(doc.empresaReceptora) ??
+                  doc.titular?.documento ??
+                  "-"
+                }
+                rut={doc.empresaReceptora?.rut ?? doc.titular?.documento}
+              />
             </Descriptions.Item>
             <Descriptions.Item label="Estado DGI">
               {doc.estado ? (
