@@ -1,10 +1,12 @@
 import { FilePdfOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useNotification, useOne } from "@refinedev/core";
-import { Alert, Button, Descriptions, Space, Table, Tag, Typography } from "antd";
+import { Alert, Button, Descriptions, Space, Table, Tag, Typography, Tooltip } from "antd";
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import {
+  AYUDA_RECIBIDO,
+  estadoDgiMostrado,
   ESTADOS_CFE,
   formatFechaDia,
   tipoDocByName,
@@ -224,7 +226,14 @@ export function DocumentoShow() {
                 </Tag>
               ) : (
                 <Space size={8} wrap>
-                  <Tag>Sin respuesta</Tag>
+                  {direccion === "EMITIDO" &&
+                  estadoDgiMostrado(doc.estado, sobre.data?.sobre?.estadoDgi) === "RECIBIDO" ? (
+                    <Tooltip title={AYUDA_RECIBIDO}>
+                      <Tag color={ESTADOS_CFE.RECIBIDO.color}>{ESTADOS_CFE.RECIBIDO.label}</Tag>
+                    </Tooltip>
+                  ) : (
+                    <Tag>Sin respuesta</Tag>
+                  )}
                   {direccion === "EMITIDO" && empresa && referencia && (
                     <ConsultaDgi
                       rut={empresa.rut}

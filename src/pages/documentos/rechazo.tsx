@@ -1,6 +1,6 @@
 import { Alert, Space, Spin, Tag, Tooltip, Typography } from "antd";
 import { useState, type ReactNode } from "react";
-import { ESTADOS_CFE } from "../../constants/cfe";
+import { AYUDA_RECIBIDO, ESTADOS_CFE, estadoDgiMostrado } from "../../constants/cfe";
 import {
   rechazoDgi,
   type MotivoRechazo,
@@ -100,12 +100,15 @@ export function RechazoDgiAlert({ rechazo }: { rechazo: RechazoDgi }) {
  */
 export function EstadoDgiTag({
   estado,
+  estadoSobreDgi,
   rut,
   documento,
   direccion,
   rutExterno,
 }: {
   estado?: string | null;
+  /** Estado DGI del sobre (emitidos): con AS y sin estado del CFE se muestra Recibido */
+  estadoSobreDgi?: string | null;
   rut?: string;
   documento?: DocumentoRef;
   direccion: string;
@@ -114,6 +117,12 @@ export function EstadoDgiTag({
   const [contenido, setContenido] = useState<ReactNode>(null);
   const [cargado, setCargado] = useState(false);
 
+  if (!estado && direccion === "EMITIDO" && estadoDgiMostrado(estado, estadoSobreDgi) === "RECIBIDO")
+    return (
+      <Tooltip title={AYUDA_RECIBIDO}>
+        <Tag color={ESTADOS_CFE.RECIBIDO.color}>{ESTADOS_CFE.RECIBIDO.label}</Tag>
+      </Tooltip>
+    );
   if (!estado) return <Tag>Sin respuesta</Tag>;
   const tag = (
     <Tag color={ESTADOS_CFE[estado]?.color}>

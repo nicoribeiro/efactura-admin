@@ -120,7 +120,20 @@ export const ESTADOS_CFE: Record<string, { label: string; color: string }> = {
   CE: { label: "Observado", color: "orange" },
   // Formatos DGI 1.40+: el CFE fue reliquidado
   FE: { label: "Reliquidado", color: "blue" },
+  // No es un estado de DGI: DGI ya acepto el sobre (AS) pero todavia no respondio por el CFE (ver estadoDgiMostrado)
+  RECIBIDO: { label: "Recibido", color: "gold" },
 };
+
+/** Texto del estado Recibido al pasar el mouse */
+export const AYUDA_RECIBIDO =
+  "DGI recibió el sobre pero todavía no respondió por el comprobante (en producción responde aprox. una hora después)";
+
+/**
+ * Estado DGI a mostrar de un comprobante: el suyo; si no tiene pero DGI ya acepto su sobre (AS), RECIBIDO; si no, null
+ * (Sin respuesta)
+ */
+export const estadoDgiMostrado = (estado?: string | null, estadoSobreDgi?: string | null) =>
+  estado || (estadoSobreDgi === "AS" ? "RECIBIDO" : null);
 
 /** Estados de la respuesta de DGI para filtrar el listado (SIN = sin respuesta) */
 export const ESTADOS_FILTRO = [

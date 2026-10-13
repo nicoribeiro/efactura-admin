@@ -34,6 +34,8 @@ export interface Documento {
   moneda?: string;
   totMntTotal?: number;
   estado?: string | null;
+  /** Sobre a DGI (emitidos): su estado se usa para mostrar Recibido */
+  sobreEmitido?: { id: number; estadoDgi?: string | null } | null;
   titular?: { documento?: string; tipoDocumento?: string } | null;
   empresaEmisora?: EmpresaRef | null;
   empresaReceptora?: EmpresaRef | null;
@@ -323,6 +325,7 @@ export function DocumentoList() {
             return (
               <EstadoDgiTag
                 estado={estado}
+                estadoSobreDgi={doc.sobreEmitido?.estadoDgi}
                 rut={empresa?.rut}
                 documento={
                   tipo

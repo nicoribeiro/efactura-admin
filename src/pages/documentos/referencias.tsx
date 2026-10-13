@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { apiJson } from "../../api/http";
-import { ESTADOS_CFE, TIPOS_DOC, tipoDocByName } from "../../constants/cfe";
+import { ESTADOS_CFE, TIPOS_DOC, estadoDgiMostrado, tipoDocByName } from "../../constants/cfe";
 import { urlDocumento } from "../../utils/busqueda";
 import { referenciasDelXml, type ReferenciaCfe } from "../../utils/referencias";
 import type { Documento } from "./list";
@@ -221,15 +221,16 @@ export function ReferenciasDocumento({
               />
               <Table.Column<DocumentoConReferencia>
                 title="Estado DGI"
-                render={(_, d) =>
-                  d.estado ? (
-                    <Tag color={ESTADOS_CFE[d.estado]?.color}>
-                      {ESTADOS_CFE[d.estado]?.label ?? d.estado}
+                render={(_, d) => {
+                  const estado = estadoDgiMostrado(d.estado, d.sobreEmitido?.estadoDgi);
+                  return estado ? (
+                    <Tag color={ESTADOS_CFE[estado]?.color}>
+                      {ESTADOS_CFE[estado]?.label ?? estado}
                     </Tag>
                   ) : (
                     <Tag>Sin respuesta</Tag>
-                  )
-                }
+                  );
+                }}
               />
               <Table.Column<DocumentoConReferencia>
                 title="Razón"

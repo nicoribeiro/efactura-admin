@@ -4,6 +4,7 @@ import { App, Button } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import {
+  estadoDgiMostrado,
   ESTADOS_CFE,
   tipoDocByName,
   type Direccion,
@@ -50,9 +51,11 @@ function filasCsv(docs: Documento[], direccion: Direccion) {
         otra?.razon,
         doc.moneda,
         numeroCsv(doc.totMntTotal),
-        doc.estado
-          ? (ESTADOS_CFE[doc.estado]?.label ?? doc.estado)
-          : "Sin respuesta",
+        (() => {
+          const estado =
+            direccion === "EMITIDO" ? estadoDgiMostrado(doc.estado, doc.sobreEmitido?.estadoDgi) : doc.estado;
+          return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : "Sin respuesta";
+        })(),
       ];
     }),
   ];

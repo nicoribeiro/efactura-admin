@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { apiJson } from "../api/http";
 import {
+  estadoDgiMostrado,
   ESTADOS_CFE,
   formatFechaDia,
   tipoDocByName,
@@ -144,11 +145,19 @@ export function BuscarComprobante() {
                     <Tag>
                       {r.direccion === "EMITIDO" ? "Emitido" : "Recibido"}
                     </Tag>
-                    {r.doc.estado && (
-                      <Tag color={ESTADOS_CFE[r.doc.estado]?.color}>
-                        {ESTADOS_CFE[r.doc.estado]?.label ?? r.doc.estado}
-                      </Tag>
-                    )}
+                    {(() => {
+                      const estado =
+                        r.direccion === "EMITIDO"
+                          ? estadoDgiMostrado(r.doc.estado, r.doc.sobreEmitido?.estadoDgi)
+                          : r.doc.estado;
+                      return (
+                        estado && (
+                          <Tag color={ESTADOS_CFE[estado]?.color}>
+                            {ESTADOS_CFE[estado]?.label ?? estado}
+                          </Tag>
+                        )
+                      );
+                    })()}
                   </Space>
                 }
                 description={[

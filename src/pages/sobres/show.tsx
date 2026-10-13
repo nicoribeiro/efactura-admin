@@ -2,7 +2,7 @@ import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
 import { Alert, Descriptions, Space, Table, Tag, Typography } from "antd";
 import { Link, useParams } from "react-router";
-import { ESTADOS_CFE, formatFechaDia } from "../../constants/cfe";
+import { ESTADOS_CFE, estadoDgiMostrado, formatFechaDia } from "../../constants/cfe";
 import { useEmpresa } from "../../contexts/empresa";
 import { urlDocumento } from "../../utils/busqueda";
 import { estadosCfeEnSobre, rechazoDelSobre } from "../../utils/dgi";
@@ -169,7 +169,7 @@ export function SobreShow() {
                   // Sobre rechazado: DGI no proceso ninguno de sus comprobantes
                   const estado = rechazo
                     ? "BE"
-                    : (estadoEnSobre(c)?.estado ?? c.estado);
+                    : estadoDgiMostrado(estadoEnSobre(c)?.estado ?? c.estado, sobre.estadoDgi);
                   if (!estado) return <Tag>Sin respuesta</Tag>;
                   return (
                     <Tag color={ESTADOS_CFE[estado]?.color}>
