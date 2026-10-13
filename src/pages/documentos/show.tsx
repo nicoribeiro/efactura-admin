@@ -1,7 +1,7 @@
 import { FilePdfOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useNotification, useOne } from "@refinedev/core";
-import { Button, Descriptions, Space, Table, Tag, Typography } from "antd";
+import { Alert, Button, Descriptions, Space, Table, Tag, Typography } from "antd";
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import {
@@ -37,6 +37,8 @@ interface DocumentoDetalle extends DocumentoConReferencia {
   mntIVATasaMin?: number;
   mntIVATasaBas?: number;
   detalle?: Record<string, unknown>[];
+  /** Controles de recepcion (E01-E07) que el recibido no paso: "E03 (observado): ...; E07: ..." */
+  observacionesRecepcion?: string | null;
 }
 
 const monto = (value?: number) =>
@@ -138,6 +140,24 @@ export function DocumentoShow() {
       {doc && (
         <>
           {rechazo && <RechazoDgiAlert rechazo={rechazo} />}
+          {doc.observacionesRecepcion && (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message="Controles de recepción no superados"
+              description={
+                <Space direction="vertical" size={2}>
+                  {doc.observacionesRecepcion.split("; ").map((o, i) => (
+                    <span key={i}>{o}</span>
+                  ))}
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    Los controles marcados como «observado» no rechazan el comprobante: solo quedan registrados.
+                  </Typography.Text>
+                </Space>
+              }
+            />
+          )}
           <Descriptions bordered size="small" column={2}>
             <Descriptions.Item label="Tipo">
               {tipo ? `${tipo.id} - ${tipo.label}` : doc.tipo}
