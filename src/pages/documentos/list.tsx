@@ -6,6 +6,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
+  ESTADOS_CFE,
   formatFechaDia,
   tipoDocByName,
   type Direccion,
@@ -36,31 +37,37 @@ export interface Documento {
   titular?: { documento?: string; tipoDocumento?: string } | null;
   empresaEmisora?: EmpresaRef | null;
   empresaReceptora?: EmpresaRef | null;
-  /** Respuesta al CFE (ME_): AE aceptado, BE rechazado, PENDIENTE (recibidos), RECIBIDA (sin estado legible) */
+  /**
+   * Respuesta al CFE (ME_): AE aceptado, BE rechazado, PENDIENTE (recibidos), RECIBIDA (sin estado legible),
+   * NO_CORRESPONDE (emitido a un receptor que no es emisor electronico)
+   */
   respuestaME?: string | null;
 }
 
-/** Estados de la respuesta al CFE entre empresas (ME_) */
-const RESPUESTAS: Record<string, { label: string; color: string; ayuda: string }> = {
-  AE: { label: "AE", color: "green", ayuda: "Comprobante aceptado" },
-  BE: { label: "BE", color: "red", ayuda: "Comprobante rechazado" },
-  PENDIENTE: { label: "Pendiente", color: "gold", ayuda: "Todavía no se le envió al emisor" },
-  ENVIADA: { label: "Enviada", color: "green", ayuda: "Respuesta enviada" },
-  RECIBIDA: { label: "Recibida", color: "blue", ayuda: "Respuesta recibida (no se pudo leer el estado)" },
+/**
+ * Respuesta al CFE entre empresas (ME_), con los mismos textos y colores que Estado DGI (ESTADOS_CFE) y M de los sobres:
+ * el estado en palabras o "Sin respuesta"
+ */
+const RESPUESTAS_ME: Record<string, { label: string; color?: string }> = {
+  ...ESTADOS_CFE,
+  PENDIENTE: { label: "Pendiente", color: "gold" },
+  ENVIADA: { label: "Enviada", color: "green" },
+  RECIBIDA: { label: "Recibida", color: "blue" },
 };
 
 function RespuestaTag({ estado, quien }: { estado?: string | null; quien: string }) {
-  if (!estado)
+  // Emitido a un receptor que no es emisor electronico: nunca se le envio el sobre, no va a responder
+  if (estado === "NO_CORRESPONDE")
     return (
-      <Tooltip title={`Sin respuesta ${quien}`}>
+      <Tooltip title="El receptor no es emisor electrónico: no responde">
         <Typography.Text type="secondary">-</Typography.Text>
       </Tooltip>
     );
-  const r = RESPUESTAS[estado];
+  const r = estado ? RESPUESTAS_ME[estado] : undefined;
   return (
-    <Tooltip title={`${r?.ayuda ?? estado} (${quien})`}>
+    <Tooltip title={estado ? `Respuesta ${quien} al comprobante` : `Sin respuesta ${quien} al comprobante`}>
       <Tag color={r?.color} style={{ marginInlineEnd: 0 }}>
-        {r?.label ?? estado}
+        {estado ? (r?.label ?? estado) : "Sin respuesta"}
       </Tag>
     </Tooltip>
   );

@@ -12,7 +12,7 @@ import {
   type SobreDetalle,
 } from "./tipos";
 
-/** Estado de un sobre (AS, BS, BA) o "Sin respuesta" */
+/** Estado de un sobre en palabras (como Estado DGI y ME de los comprobantes), o "Sin respuesta" */
 export function EstadoSobreTag({
   estado,
   sinValor = "Sin respuesta",
@@ -22,7 +22,7 @@ export function EstadoSobreTag({
 }) {
   return estado ? (
     <Tag color={ESTADOS_SOBRE[estado]?.color}>
-      {ESTADOS_SOBRE[estado]?.label ?? estado} ({estado})
+      {ESTADOS_SOBRE[estado]?.label ?? estado}
     </Tag>
   ) : (
     <Tag>{sinValor}</Tag>

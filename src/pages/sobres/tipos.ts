@@ -30,6 +30,8 @@ export interface SobreResumen {
   fechaConsulta?: string | null;
   timestampRecibido?: string | null;
   timestampProcesado?: string | null;
+  /** Emitidos: false si el sobre nunca se le envio al receptor (no es emisor electronico), no va a responder */
+  enviadoAEmpresa?: boolean;
   empresaEmisora?: EmpresaRef | null;
   empresaReceptora?: EmpresaRef | null;
   comprobantes: ComprobanteResumen[];
@@ -52,8 +54,8 @@ export const ESTADOS_SOBRE: Record<string, { label: string; color: string }> = {
 
 /** Filtro de estado del listado de sobres (SIN = sin estado) */
 export const ESTADOS_SOBRE_FILTRO = [
-  { value: "AS", label: "Recibido (AS)" },
-  { value: "BS", label: "Rechazado (BS)" },
+  { value: "AS", label: "Recibido" },
+  { value: "BS", label: "Rechazado" },
   { value: "SIN", label: "Sin respuesta" },
 ];
 
