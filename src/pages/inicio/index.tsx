@@ -120,6 +120,9 @@ const MARGEN_RESPUESTA_DGI_MIN = 60;
 /** "yyyy-MM-dd HH:mm:ss z" de la API */
 const fechaApi = (v?: string | null) => (v ? dayjs(v.slice(0, 19)) : undefined);
 
+/** Con cuantas horas de anticipacion se avisa que sale la respuesta a los comprobantes recibidos (ME_) */
+const HORAS_AVISO_RESPUESTA = 48;
+
 interface Datos {
   resumen?: Resumen;
   caes?: CAE[];
@@ -133,6 +136,11 @@ interface Datos {
   reportes?: { fecha: string }[];
   /** Emitidos sin respuesta de DGI pasada la hora de consulta + margen (de los 50 mas recientes sin respuesta) */
   sinRespuestaDgi?: SinRespuestaDgi[];
+  /** Sobres recibidos con la respuesta a sus comprobantes (ME_) pendiente (los 50 mas viejos) y el total */
+  respuestasCfe?: {
+    total: number;
+    sobres: { id: number; programada?: string | null }[];
+  };
   /** null si el usuario no es ADMIN (la API no le muestra los procesos) */
   procesos?: EstadoProcesos | null;
   errores: Record<string, string>;
@@ -270,7 +278,12 @@ export function Inicio() {
       ).then((r) => (r ?? []).flat()),
       // Sin importar el periodo: lo que esta pendiente ahora. La hora de cada uno sale de su sobre.
       sinRespuestaDgi: apiJson<{
-        results: { tipo: string; serie: string; nro: number; fechaEmision: string }[];
+        results: {
+          tipo: string;
+          serie: string;
+          nro: number;
+          fechaEmision: string;
+        }[];
       }>("GET", `/empresa/${rut}/documentos`, {
         direccion: "EMITIDO",
         estado: "SIN",
@@ -302,6 +315,24 @@ export function Inicio() {
           x.status === "fulfilled" && x.value ? [x.value] : [],
         );
       }),
+      // Sin importar el periodo: respuestas a comprobantes recibidos pendientes ahora
+      respuestasCfe: apiJson<{
+        results: { id: number; respuestaCfeProgramada?: string | null }[];
+        count: number;
+      }>("GET", `/empresa/${rut}/sobres`, {
+        direccion: "RECIBIDO",
+        respuestaME: "PENDIENTE",
+        fromDate: 0,
+        toDate: Math.floor(Date.now() / 1000) + 86400,
+        page: 1,
+        pageSize: 50,
+      }).then((r) => ({
+        total: r.count,
+        sobres: r.results.map((s) => ({
+          id: s.id,
+          programada: s.respuestaCfeProgramada,
+        })),
+      })),
       // Solo ADMIN: para el resto la API lo rechaza y no se avisa nada
       procesos: apiJson<EstadoProcesos>("GET", "/procesos").catch(() => null),
     };
@@ -514,12 +545,84 @@ export function Inicio() {
                   : urlComprobantes({ estado: "SIN" }, dayjs(masViejo), dayjs())
               }
             >
-              {sinRespuesta.length === 1 ? "ver comprobante" : "ver sin respuesta"}
+              {sinRespuesta.length === 1
+                ? "ver comprobante"
+                : "ver sin respuesta"}
             </Link>
             )
           </>
         ),
       });
+    }
+
+    // Respuestas a los comprobantes recibidos (ME_): atrasadas (ya tendrian que haber salido), por salir (para revisar
+    // y rechazar a tiempo) y las que esperan que alguien las envie
+    if (datos.respuestasCfe && datos.respuestasCfe.total > 0) {
+      const ahora = dayjs();
+      const sobres = datos.respuestasCfe.sobres.map((s) => ({
+        ...s,
+        cuando: fechaApi(s.programada),
+      }));
+      const atrasadas = sobres.filter(
+        (s) => s.cuando && s.cuando.isBefore(ahora),
+      );
+      const proximas = sobres
+        .filter(
+          (s) =>
+            s.cuando &&
+            !s.cuando.isBefore(ahora) &&
+            s.cuando.diff(ahora, "hour") < HORAS_AVISO_RESPUESTA,
+        )
+        .sort((a, b) => a.cuando!.valueOf() - b.cuando!.valueOf());
+      const aMano = sobres.filter((s) => !s.cuando);
+      const link = (texto: string) => (
+        <Link
+          to={`/sobres?direccion=RECIBIDO&respuestaME=PENDIENTE&desde=2016-01-01&hasta=${dayjs().format("YYYY-MM-DD")}`}
+        >
+          {texto}
+        </Link>
+      );
+      const plural = (n: number, uno: string, varios: string) =>
+        n === 1 ? uno : varios;
+      if (atrasadas.length > 0)
+        lista.push({
+          gravedad: "error",
+          texto: (
+            <>
+              {atrasadas.length} respuesta{plural(atrasadas.length, "", "s")} a
+              comprobantes recibidos atrasada
+              {plural(atrasadas.length, "", "s")}: ya tendría
+              {plural(atrasadas.length, "", "n")} que haberse enviado al emisor
+              ({link("ver sobres")})
+            </>
+          ),
+        });
+      if (proximas.length > 0)
+        lista.push({
+          gravedad: "info",
+          texto: (
+            <>
+              {proximas.length} respuesta{plural(proximas.length, "", "s")} a
+              comprobantes recibidos se envía
+              {plural(proximas.length, "", "n")} al emisor en las próximas{" "}
+              {HORAS_AVISO_RESPUESTA} horas (la primera el{" "}
+              {proximas[0].cuando!.format("DD/MM HH:mm")}): si hay que rechazar
+              alguno, es antes de eso ({link("ver sobres")})
+            </>
+          ),
+        });
+      if (aMano.length > 0)
+        lista.push({
+          gravedad: "info",
+          texto: (
+            <>
+              {aMano.length} sobre{plural(aMano.length, "", "s")} recibido
+              {plural(aMano.length, "", "s")} espera
+              {plural(aMano.length, "", "n")} que se envíe a mano la respuesta a
+              sus comprobantes ({link("ver sobres")})
+            </>
+          ),
+        });
     }
 
     // Procesos (solo ADMIN): ultima ejecucion con error, o sin ejecutarse hace mas de 3 intervalos
@@ -543,13 +646,19 @@ export function Inicio() {
           });
         const limiteMin = Math.max(10, (3 * p.intervaloSegundos) / 60);
         const ultimo = inicio ?? inicioInstancia;
-        if (!p.enEjecucion && ultimo && ahoraApi.diff(ultimo, "minute") > limiteMin)
+        if (
+          !p.enEjecucion &&
+          ultimo &&
+          ahoraApi.diff(ultimo, "minute") > limiteMin
+        )
           lista.push({
             gravedad: "warning",
             texto: (
               <>
                 Proceso «{titulo}»: no se ejecuta desde{" "}
-                {inicio ? `hace ${ahoraApi.diff(inicio, "minute")} minutos` : "que arrancó la API"}{" "}
+                {inicio
+                  ? `hace ${ahoraApi.diff(inicio, "minute")} minutos`
+                  : "que arrancó la API"}{" "}
                 ({link})
               </>
             ),
