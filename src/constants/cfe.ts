@@ -118,6 +118,8 @@ export const ESTADOS_CFE: Record<string, { label: string; color: string }> = {
   AE: { label: "Aceptado", color: "green" },
   BE: { label: "Rechazado", color: "red" },
   CE: { label: "Observado", color: "orange" },
+  // Formatos DGI 1.40+: el CFE fue reliquidado
+  FE: { label: "Reliquidado", color: "blue" },
 };
 
 /** Estados de la respuesta de DGI para filtrar el listado (SIN = sin respuesta) */
@@ -125,6 +127,7 @@ export const ESTADOS_FILTRO = [
   { value: "AE", label: "Aceptado" },
   { value: "BE", label: "Rechazado" },
   { value: "CE", label: "Observado" },
+  { value: "FE", label: "Reliquidado" },
   { value: "SIN", label: "Sin respuesta" },
 ];
 
