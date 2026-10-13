@@ -90,16 +90,6 @@ export default function App() {
                 meta: { label: "Reporte diario", icon: <CalendarOutlined /> },
               },
               {
-                name: "usuarios",
-                list: "/usuarios",
-                meta: { label: "Usuarios", icon: <TeamOutlined /> },
-              },
-              {
-                name: "procesos",
-                list: "/procesos",
-                meta: { label: "Procesos", icon: <ScheduleOutlined /> },
-              },
-              {
                 name: "cotizaciones",
                 list: "/cotizaciones",
                 meta: { label: "Cotizaciones", icon: <DollarOutlined /> },
@@ -109,6 +99,17 @@ export default function App() {
                 list: "/empresas",
                 show: "/empresas/show/:id",
                 meta: { label: "Empresas", icon: <BankOutlined /> },
+              },
+              // Administración: al final del menú, antes de Salir
+              {
+                name: "usuarios",
+                list: "/usuarios",
+                meta: { label: "Usuarios", icon: <TeamOutlined /> },
+              },
+              {
+                name: "procesos",
+                list: "/procesos",
+                meta: { label: "Procesos", icon: <ScheduleOutlined /> },
               },
             ]}
             options={{

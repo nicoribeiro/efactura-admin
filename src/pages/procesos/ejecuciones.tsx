@@ -161,7 +161,8 @@ export function EjecucionesProceso({ nombre, titulo }: { nombre: string; titulo:
           rowKey="id"
           loading={cargando}
           dataSource={datos?.results ?? []}
-          locale={{ emptyText: "Todavía no hay ejecuciones registradas" }}
+          // Solo se registran las ejecuciones que hicieron algo o fallaron
+          locale={{ emptyText: "Todavía no hay ejecuciones registradas (solo se registran las que hicieron algo o fallaron)" }}
           pagination={{
             current: pagina,
             pageSize: 20,

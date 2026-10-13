@@ -179,15 +179,14 @@ export function Procesos() {
                     }
                     extra={
                       <Space size={12}>
-                        {info?.ejecuciones && (
-                          <EjecucionesProceso
-                            nombre={p.nombre}
-                            titulo={info.titulo}
-                          />
-                        )}
                         {info?.link && (
                           <Link to={info.link.to}>{info.link.texto}</Link>
                         )}
+                        {/* Siempre al final: alineado a la derecha en todas las tarjetas */}
+                        <EjecucionesProceso
+                          nombre={p.nombre}
+                          titulo={info?.titulo ?? p.nombre}
+                        />
                       </Space>
                     }
                   >
