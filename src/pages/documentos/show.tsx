@@ -21,6 +21,7 @@ import {
   ReferenciasDocumento,
   type DocumentoConReferencia,
 } from "./referencias";
+import { DatosAdicionalesCfe } from "./datosAdicionales";
 import { SobreDocumentoInfo } from "./sobre";
 import { RechazoComercial, RespuestaCfeEstado } from "./respuestaCfe";
 import { EmpresaConRutDgi } from "../../components/RutDgi";
@@ -247,6 +248,8 @@ export function DocumentoShow() {
               </Descriptions.Item>
             )}
           </Descriptions>
+
+          <DatosAdicionalesCfe sobre={sobre.data?.sobre} documento={referencia} direccion={direccion} />
 
           {empresa && referencia && (
             <ReferenciasDocumento
