@@ -1,7 +1,7 @@
 import { EditOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useOne } from "@refinedev/core";
-import { Button, Descriptions, Space, Tabs, Tag } from "antd";
+import { Button, Descriptions, Space, Tabs, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { estadoFirma, formatFechaCorta } from "../../constants/firma";
@@ -15,6 +15,9 @@ import { CargarFirma } from "./firma";
 import { LogoEmpresa } from "./logo";
 import { SucursalesTable } from "./sucursales";
 import { UsuariosTable } from "./usuarios";
+
+/** Fecha yyyy-MM-dd de DGI como dd/MM/yyyy */
+const fechaDgi = (v?: string | null) => (v ? v.split("-").reverse().join("/") : "-");
 
 export function EmpresaShow() {
   const { id: rut = "" } = useParams();
@@ -90,6 +93,26 @@ export function EmpresaShow() {
                       esAdmin={esAdmin}
                       onCambiado={() => query.refetch()}
                     />
+                  </Descriptions.Item>
+                </Descriptions>
+                <Descriptions
+                  bordered
+                  size="small"
+                  column={2}
+                  style={{ marginTop: 16 }}
+                  title="Emisor electrónico según DGI"
+                  extra={
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      Lo guarda la sincronización de emisores electrónicos
+                    </Typography.Text>
+                  }
+                >
+                  <Descriptions.Item label="Inicio">{fechaDgi(empresa.fechaInicioEmisorDgi)}</Descriptions.Item>
+                  <Descriptions.Item label="Fin">{fechaDgi(empresa.fechaFinEmisorDgi)}</Descriptions.Item>
+                  <Descriptions.Item label="Fin de la transición">{fechaDgi(empresa.fechaFinTransicionDgi)}</Descriptions.Item>
+                  <Descriptions.Item label="Contacto técnico">{empresa.mailContactoTecnicoDgi ?? "-"}</Descriptions.Item>
+                  <Descriptions.Item label="Web service" span={2}>
+                    {empresa.urlWebserviceDgi ?? "-"}
                   </Descriptions.Item>
                 </Descriptions>
                 {editando && (

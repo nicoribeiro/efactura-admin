@@ -18,6 +18,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { apiJson } from "../../api/http";
+import { EjecucionesProceso } from "./ejecuciones";
 import { INFO } from "./info";
 import { formatFechaApi } from "../../constants/cfe";
 
@@ -177,9 +178,17 @@ export function Procesos() {
                       </Space>
                     }
                     extra={
-                      info?.link && (
-                        <Link to={info.link.to}>{info.link.texto}</Link>
-                      )
+                      <Space size={12}>
+                        {info?.ejecuciones && (
+                          <EjecucionesProceso
+                            nombre={p.nombre}
+                            titulo={info.titulo}
+                          />
+                        )}
+                        {info?.link && (
+                          <Link to={info.link.to}>{info.link.texto}</Link>
+                        )}
+                      </Space>
                     }
                   >
                     {info && (

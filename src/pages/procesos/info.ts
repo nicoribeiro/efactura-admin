@@ -6,6 +6,8 @@ export const INFO: Record<
     descripcion: string;
     config: string;
     link?: { to: string; texto: string };
+    /** Registra sus ejecuciones en la API (GET /procesos/:nombre/ejecuciones) */
+    ejecuciones?: boolean;
   }
 > = {
   ReporteDiarioPoller: {
@@ -27,6 +29,13 @@ export const INFO: Record<
       "Descarga la cotización del dólar de INE y completa los días que faltan.",
     config: "TipoDeCambioPoller.run",
     link: { to: "/cotizaciones", texto: "Ver cotizaciones" },
+  },
+  EmisoresElectronicosPoller: {
+    titulo: "Emisores electrónicos (DGI)",
+    descripcion:
+      "Una vez por día pide a DGI los emisores electrónicos nuevos o modificados y actualiza las empresas (si son emisores y su mail de intercambio). Las empresas propias no se tocan.",
+    config: "EmisoresElectronicosPoller.run",
+    ejecuciones: true,
   },
   RespuestaCfePoller: {
     titulo: "Respuesta a los comprobantes recibidos",

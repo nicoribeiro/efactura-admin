@@ -8,6 +8,12 @@ export interface Empresa {
   razon?: string;
   nombreComercial?: string;
   emisorElectronico?: boolean;
+  /** Datos de emisor electronico segun DGI (yyyy-MM-dd); los guarda la sincronizacion de emisores */
+  fechaInicioEmisorDgi?: string | null;
+  fechaFinTransicionDgi?: string | null;
+  fechaFinEmisorDgi?: string | null;
+  urlWebserviceDgi?: string | null;
+  mailContactoTecnicoDgi?: string | null;
   mailRecepcion?: string;
   hostRecepcion?: string;
   puertoRecepcion?: string;
