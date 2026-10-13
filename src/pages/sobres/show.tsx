@@ -10,6 +10,7 @@ import { etiquetaEmpresa } from "../documentos/list";
 import { RechazoDgiAlert } from "../documentos/rechazo";
 import { SobreDocumentoInfo } from "../documentos/sobre";
 import { EstadoSobreTag } from "./componentes";
+import { RespuestaCfeEstado } from "../documentos/respuestaCfe";
 import {
   etiquetaComprobante,
   type ComprobanteResumen,
@@ -66,6 +67,20 @@ export function SobreShow() {
       {sobre && (
         <Space direction="vertical" size={24} style={{ width: "100%" }}>
           {rechazo && <RechazoDgiAlert rechazo={rechazo} />}
+          {!emitido && sobre.observacionesRecepcion && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Controles del sobre no superados"
+              description={
+                <Space direction="vertical" size={2}>
+                  {sobre.observacionesRecepcion.split("; ").map((o, i) => (
+                    <span key={i}>{o}</span>
+                  ))}
+                </Space>
+              }
+            />
+          )}
 
           <Descriptions bordered size="small" column={2}>
             <Descriptions.Item label="Dirección">
@@ -93,6 +108,11 @@ export function SobreShow() {
             <Descriptions.Item label="Comprobantes">
               {sobre.comprobantes.length}
             </Descriptions.Item>
+            {!emitido && empresa && (
+              <Descriptions.Item label="Respuesta a los comprobantes" span={2}>
+                <RespuestaCfeEstado rut={empresa.rut} sobre={sobre} onEnviada={() => query.refetch()} />
+              </Descriptions.Item>
+            )}
           </Descriptions>
 
           <div>

@@ -22,6 +22,7 @@ import {
   type DocumentoConReferencia,
 } from "./referencias";
 import { SobreDocumentoInfo } from "./sobre";
+import { RechazoComercial, RespuestaCfeEstado } from "./respuestaCfe";
 import { useSobreDocumento } from "./useSobre";
 
 interface DocumentoDetalle extends DocumentoConReferencia {
@@ -39,6 +40,10 @@ interface DocumentoDetalle extends DocumentoConReferencia {
   detalle?: Record<string, unknown>[];
   /** Controles de recepcion (E01-E07) que el recibido no paso: "E03 (observado): ...; E07: ..." */
   observacionesRecepcion?: string | null;
+  /** Motivos de rechazo del recibido: de los controles (enforce) y comerciales (E20 en adelante, a mano) */
+  motivosRechazo?: string[];
+  /** Detalle del rechazo comercial (va en la respuesta al emisor) */
+  detalleRechazo?: string | null;
 }
 
 const monto = (value?: number) =>
@@ -157,6 +162,31 @@ export function DocumentoShow() {
                 </Space>
               }
             />
+          )}
+          {direccion === "RECIBIDO" && empresa && sobre.data?.sobre && (
+            <Descriptions bordered size="small" column={1} style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="Respuesta al emisor">
+                <Space direction="vertical" size={8}>
+                  <RespuestaCfeEstado
+                    rut={empresa.rut}
+                    sobre={sobre.data.sobre}
+                    onEnviada={() => {
+                      query.refetch();
+                      setRecargaSobre((n) => n + 1);
+                      setRecargaEnvios((n) => n + 1);
+                    }}
+                  />
+                  <RechazoComercial
+                    rut={empresa.rut}
+                    cfeId={doc.id}
+                    motivos={doc.motivosRechazo ?? []}
+                    detalle={doc.detalleRechazo}
+                    pendiente={!!sobre.data.sobre.respuestaCfePendiente && !sobre.data.sobre.respuestaCfes}
+                    onCambio={() => query.refetch()}
+                  />
+                </Space>
+              </Descriptions.Item>
+            </Descriptions>
           )}
           <Descriptions bordered size="small" column={2}>
             <Descriptions.Item label="Tipo">
@@ -305,7 +335,7 @@ export function DocumentoShow() {
               {direccion === "EMITIDO" ? (
                 <EnviosMail rut={empresa.rut} documento={referencia} recarga={recargaEnvios} />
               ) : sobre.data?.sobre?.id ? (
-                <EnviosMail rut={empresa.rut} sobreId={sobre.data.sobre.id} />
+                <EnviosMail rut={empresa.rut} sobreId={sobre.data.sobre.id} recarga={recargaEnvios} />
               ) : (
                 <Typography.Text type="secondary">Sin sobre</Typography.Text>
               )}

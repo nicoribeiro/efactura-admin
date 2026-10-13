@@ -28,6 +28,12 @@ export const INFO: Record<
     config: "TipoDeCambioPoller.run",
     link: { to: "/cotizaciones", texto: "Ver cotizaciones" },
   },
+  RespuestaCfePoller: {
+    titulo: "Respuesta a los comprobantes recibidos",
+    descripcion:
+      "Envía a cada emisor la aceptación o el rechazo de los comprobantes de sus sobres cuando se cumplen los días de espera de la empresa.",
+    config: "RespuestaCfePoller.run",
+  },
   NotificationPoller: {
     titulo: "Notificaciones",
     descripcion: "Envía las notificaciones pendientes a los usuarios.",

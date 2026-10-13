@@ -1,7 +1,7 @@
 import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
-import { Button, Space, Table, Typography } from "antd";
+import { Button, Space, Table, Tag, Tooltip, Typography } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -36,6 +36,34 @@ export interface Documento {
   titular?: { documento?: string; tipoDocumento?: string } | null;
   empresaEmisora?: EmpresaRef | null;
   empresaReceptora?: EmpresaRef | null;
+  /** Respuesta al CFE (ME_): AE aceptado, BE rechazado, PENDIENTE (recibidos), RECIBIDA (sin estado legible) */
+  respuestaME?: string | null;
+}
+
+/** Estados de la respuesta al CFE entre empresas (ME_) */
+const RESPUESTAS: Record<string, { label: string; color: string; ayuda: string }> = {
+  AE: { label: "AE", color: "green", ayuda: "Comprobante aceptado" },
+  BE: { label: "BE", color: "red", ayuda: "Comprobante rechazado" },
+  PENDIENTE: { label: "Pendiente", color: "gold", ayuda: "Todavía no se le envió al emisor" },
+  ENVIADA: { label: "Enviada", color: "green", ayuda: "Respuesta enviada" },
+  RECIBIDA: { label: "Recibida", color: "blue", ayuda: "Respuesta recibida (no se pudo leer el estado)" },
+};
+
+function RespuestaTag({ estado, quien }: { estado?: string | null; quien: string }) {
+  if (!estado)
+    return (
+      <Tooltip title={`Sin respuesta ${quien}`}>
+        <Typography.Text type="secondary">-</Typography.Text>
+      </Tooltip>
+    );
+  const r = RESPUESTAS[estado];
+  return (
+    <Tooltip title={`${r?.ayuda ?? estado} (${quien})`}>
+      <Tag color={r?.color} style={{ marginInlineEnd: 0 }}>
+        {r?.label ?? estado}
+      </Tag>
+    </Tooltip>
+  );
 }
 
 interface FiltrosForm {
@@ -92,7 +120,7 @@ function filtrosAUrl(valores: FiltrosForm, page: number) {
     params.set("hasta", valores.fecha[1].format("YYYY-MM-DD"));
   }
   const opcionales = {
-    estado: valores.estado,
+    estado: valores.estado || undefined,
     idTipoDoc: valores.idTipoDoc,
     serie: valores.serie?.trim(),
     nro: valores.nro,
@@ -117,7 +145,7 @@ function aFiltros(values: FiltrosForm): CrudFilters {
   return [
     { field: "direccion", operator: "eq", value: values.direccion },
     { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
-    { field: "estado", operator: "eq", value: values.estado },
+    { field: "estado", operator: "eq", value: values.estado || undefined },
     { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
     {
       field: "serie",
@@ -162,7 +190,9 @@ export function DocumentoList() {
     meta: { rut: empresa?.rut },
     queryOptions: { enabled: !!empresa },
     pagination: { pageSize: 20, currentPage: inicial.page },
-    filters: { initial: aFiltros(inicial) },
+    // replace: cada busqueda manda todos los filtros; con merge (por defecto) un filtro borrado (ej. Estado DGI en
+    // "Todos") no se sacaba y seguia aplicando el anterior
+    filters: { initial: aFiltros(inicial), defaultBehavior: "replace" },
     onSearch: (values) => {
       buscados.current = values;
       return aFiltros(values);
@@ -299,6 +329,18 @@ export function DocumentoList() {
               />
             );
           }}
+        />
+        <Table.Column<Documento>
+          title={
+            <Tooltip title={direccion === "EMITIDO" ? "Respuesta del receptor al comprobante (ME_)" : "Nuestra respuesta al comprobante (ME_)"}>
+              ME
+            </Tooltip>
+          }
+          dataIndex="respuestaME"
+          align="center"
+          render={(estado?: string | null) => (
+            <RespuestaTag estado={estado} quien={direccion === "EMITIDO" ? "del receptor" : "nuestra"} />
+          )}
         />
         <Table.Column<Documento>
           title=""

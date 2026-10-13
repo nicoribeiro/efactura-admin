@@ -9,6 +9,7 @@ import {
   Select,
   Space,
   Table,
+  Tooltip,
   Typography,
 } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
@@ -226,11 +227,15 @@ export function SobreList() {
               dataIndex="fechaConsulta"
               render={formatFechaApi}
             />
+            <Table.Column<SobreResumen>
+              title={<Tooltip title="Respuesta de la empresa receptora al sobre (M_)">M</Tooltip>}
+              render={(_, s) => <EstadoSobreTag estado={s.estadoEmpresa} sinValor="-" />}
+            />
           </>
         ) : (
           <>
             <Table.Column<SobreResumen>
-              title="Nuestra respuesta"
+              title={<Tooltip title="Nuestra respuesta al sobre (M_)">M</Tooltip>}
               render={(_, s) => <EstadoSobreTag estado={s.estadoEmpresa} />}
             />
             <Table.Column<SobreResumen>

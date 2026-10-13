@@ -19,6 +19,10 @@ export interface Empresa {
   /** Tiene logo cargado (GET /empresa/:rut/logo) */
   tieneLogo?: boolean;
   firmaDigital?: FirmaDigital | null;
+  /** Dias de espera de la respuesta a los CFE recibidos (ME_): null = el de la configuracion, -1 = solo a mano */
+  diasRespuestaCfe?: number | null;
+  /** El que rige (el de la empresa o el de la configuracion) */
+  diasRespuestaCfeEfectivo?: number;
 }
 
 /** Version reducida que la API incluye dentro de CFE, sobres, CAE y reportes */

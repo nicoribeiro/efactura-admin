@@ -29,6 +29,12 @@ export interface Sobre {
   // Recibido
   timestampRecibido?: string | null;
   timestampProcesado?: string | null;
+  /** La respuesta a sus CFE (ME_) todavia no se envio */
+  respuestaCfePendiente?: boolean;
+  /** Cuando se envia sola (null: la empresa responde a mano o no esta pendiente) */
+  respuestaCfeProgramada?: string | null;
+  /** Controles del sobre (S02-S06, S20) que no paso */
+  observacionesRecepcion?: string | null;
 }
 
 export interface SobreDocumento {

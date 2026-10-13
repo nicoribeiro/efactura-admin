@@ -15,6 +15,7 @@ const CAMPOS = [
   "userRecepcion",
   "mailNotificaciones",
   "fromEnvio",
+  "diasRespuestaCfe",
 ] as const;
 
 type Campo = (typeof CAMPOS)[number];
@@ -38,7 +39,10 @@ export function EditarEmpresa({
   const [guardando, setGuardando] = useState(false);
 
   const iniciales: Valores = Object.fromEntries(
-    CAMPOS.map((c) => [c, (empresa[c as keyof Empresa] as string | undefined) ?? ""]),
+    CAMPOS.map((c) => {
+      const valor = empresa[c as keyof Empresa];
+      return [c, valor == null ? "" : String(valor)];
+    }),
   );
 
   const guardar = async (valores: Valores) => {
@@ -155,6 +159,33 @@ export function EditarEmpresa({
           extra="Dirección desde la que se envían los comprobantes a los receptores."
         >
           <Input />
+        </Form.Item>
+
+        <Divider orientation="left" plain>
+          Comprobantes recibidos
+        </Divider>
+        <Form.Item
+          name="diasRespuestaCfe"
+          label="Días para responder los comprobantes recibidos"
+          rules={[
+            {
+              pattern: /^(-1|[0-9]|[1-8][0-9]|90)?$/,
+              message: "De -1 a 90, o vacío",
+            },
+          ]}
+          extra={
+            <>
+              Al recibir un sobre, la respuesta a sus comprobantes (aceptación o rechazo de cada uno) se le envía al emisor
+              después de estos días; mientras tanto se puede rechazar un comprobante. 0 = enseguida, -1 = nunca sola
+              (solo a mano), vacío = el valor por defecto
+              {empresa.diasRespuestaCfe == null && empresa.diasRespuestaCfeEfectivo != null
+                ? ` (hoy ${empresa.diasRespuestaCfeEfectivo === -1 ? "solo a mano" : `${empresa.diasRespuestaCfeEfectivo} días`})`
+                : ""}
+              .
+            </>
+          }
+        >
+          <Input style={{ width: 120 }} placeholder="Por defecto" />
         </Form.Item>
       </Form>
     </Modal>

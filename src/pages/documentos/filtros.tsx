@@ -180,10 +180,18 @@ export function FiltrosComprobantes({
                 { label: "Emitidos", value: "EMITIDO" },
                 { label: "Recibidos", value: "RECIBIDO" },
               ]}
+              // Cambiar entre emitidos y recibidos busca enseguida (despues de que el form toma el valor)
+              onChange={() => setTimeout(() => form?.submit())}
             />
           </Form.Item>
           <Form.Item name="estado" label="Estado DGI">
-            <Select allowClear placeholder="Todos" options={ESTADOS_FILTRO} />
+            <Select
+              allowClear
+              placeholder="Todos"
+              options={[{ value: "", label: "Todos" }, ...ESTADOS_FILTRO]}
+              // Elegir o borrar el estado busca enseguida, como emitidos/recibidos
+              onChange={() => setTimeout(() => form?.submit())}
+            />
           </Form.Item>
         </Col>
         <Col xs={24} md={16} lg={18}>
