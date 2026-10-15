@@ -27,7 +27,6 @@ import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
 import { mismoRango, rangosRapidos } from "../../utils/rangos";
-import { CarpetasImap } from "./carpetas";
 import { rolUsuario } from "../../providers/authProvider";
 import { OmitirEmail, ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
 import { ordenar } from "../../utils/orden";
@@ -226,7 +225,6 @@ export function EmailsTable({ rut }: { rut: string }) {
 
   return (
     <>
-      <CarpetasImap rut={rut} />
       <Form
         {...searchFormProps}
         layout="inline"

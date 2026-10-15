@@ -1,5 +1,5 @@
-import { FolderOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Alert, Button, Collapse, Table, Tag, Tooltip, Typography } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
+import { Alert, Button, Table, Tag, Tooltip, Typography } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
@@ -83,16 +83,16 @@ export function CarpetasImap({ rut }: { rut: string }) {
     return !ultima || dayjs().diff(ultima, "minute") > MINUTOS_AL_DIA;
   }).length;
 
-  const titulo = (
-    <span>
-      <FolderOutlined /> Carpetas sincronizadas{loading ? "" : ` (${carpetas.length})`}
-      {conProblemas > 0 && (
-        <Tag color="orange" style={{ marginLeft: 8 }}>
-          {conProblemas} sin sincronizar recientemente
-        </Tag>
-      )}
-    </span>
-  );
+  // Pestaña propia en la empresa (entre Emails recibidos y Usuarios): arriba, las que no se sincronizan hace rato
+  const aviso =
+    conProblemas > 0 ? (
+      <Alert
+        type="warning"
+        showIcon
+        style={{ marginBottom: 12 }}
+        message={`${conProblemas} carpeta${conProblemas === 1 ? "" : "s"} sin sincronizar recientemente`}
+      />
+    ) : null;
 
   let contenido;
   if (error)
@@ -161,5 +161,10 @@ export function CarpetasImap({ rut }: { rut: string }) {
       </>
     );
 
-  return <Collapse size="small" style={{ marginBottom: 16 }} items={[{ key: "carpetas", label: titulo, children: contenido }]} />;
+  return (
+    <>
+      {aviso}
+      {contenido}
+    </>
+  );
 }

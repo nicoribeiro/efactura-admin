@@ -10,6 +10,7 @@ import { CaeTable } from "./caes";
 import { rolUsuario } from "../../providers/authProvider";
 import { BotonRutDgi } from "../../components/RutDgi";
 import { EditarEmpresa } from "./editarEmpresa";
+import { CarpetasImap } from "./carpetas";
 import { EmailsTable } from "./emails";
 import { CargarFirma } from "./firma";
 import { LogoEmpresa } from "./logo";
@@ -145,6 +146,11 @@ export function EmpresaShow() {
               key: "emails",
               label: "Emails recibidos",
               children: <EmailsTable rut={empresa.rut} />,
+            },
+            {
+              key: "carpetas",
+              label: "Carpetas sincronizadas",
+              children: <CarpetasImap rut={empresa.rut} />,
             },
             {
               key: "usuarios",

@@ -1,7 +1,7 @@
 import { EyeOutlined, SearchOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import type { CrudFilters } from "@refinedev/core";
-import { Button, Card, Checkbox, Form, Input, Table, Tag } from "antd";
+import { Button, Card, Checkbox, Form, Input, Table, Tag, Typography } from "antd";
 import { useNavigate } from "react-router";
 import { estadoFirma } from "../../constants/firma";
 import type { Empresa } from "../../contexts/empresa";
@@ -45,7 +45,12 @@ export function EmpresaList() {
       </Card>
 
       <Table {...tableProps} rowKey="rut" size="middle" onRow={(empresa) => ({ onDoubleClick: () => ver(empresa) })}>
-        <Table.Column dataIndex="rut" title="RUT" sorter />
+        <Table.Column<Empresa>
+          dataIndex="rut"
+          title="RUT"
+          sorter
+          render={(rut: string, empresa) => <Typography.Link onClick={() => ver(empresa)}>{rut}</Typography.Link>}
+        />
         <Table.Column<Empresa>
           dataIndex="razon"
           title="Razón social"
