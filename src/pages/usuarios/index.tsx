@@ -281,6 +281,22 @@ export function Usuarios() {
           )}
         />
         <Table.Column<Usuario>
+          title="Email confirmado"
+          align="center"
+          sorter={ordenar<Usuario>((u) => u.emailConfirmado)}
+          render={(_, u) =>
+            u.emailConfirmado === undefined ? (
+              <Typography.Text type="secondary">-</Typography.Text>
+            ) : u.emailConfirmado ? (
+              <Tag color="green">Sí</Tag>
+            ) : (
+              <Tooltip title="Sin el email confirmado no puede recuperar la contraseña">
+                <Tag color="orange">No</Tag>
+              </Tooltip>
+            )
+          }
+        />
+        <Table.Column<Usuario>
           title="Rol"
           sorter={ordenar<Usuario>((u) =>
             u.role === "ADMIN" ? "Administrador" : "Usuario",

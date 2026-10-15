@@ -51,7 +51,7 @@ async function toHttpError(response: Response): Promise<HttpError> {
  * El panel es de solo lectura salvo una lista explicita de escrituras: el login, la administracion de usuarios (solo
  * ADMIN en la API), los datos de la empresa y sus sucursales, la carga de CAE, el reporte diario, la consulta a DGI y el
  * reenvio por mail de un comprobante, el reintento de los emails recibidos, la respuesta a los CFE recibidos (y su
- * rechazo comercial) y el cambio de la contrasena propia. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
+ * rechazo comercial) el cambio de la contrasena propia, la confirmacion del email propio y la recuperacion de la contrasena. Cualquier otro POST/PUT/DELETE se bloquea aca, antes de llegar a la API. Ademas se bloquean los
  * GET de la API que tienen efectos (consultan DGI y actualizan estados, o envian mails), salvo los de esta lista.
  */
 const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
@@ -85,6 +85,12 @@ const ESCRITURAS_PERMITIDAS: { method: string; path: RegExp }[] = [
   { method: "PUT", path: /^\/empresa\/\d+\/documentos\/recibidos\/\d+\/rechazo$/ },
   // Contrasena propia
   { method: "PUT", path: /^\/cuenta\/password$/ },
+  // Confirmacion del email propio (envia un mail con el codigo)
+  { method: "POST", path: /^\/cuenta\/email\/codigo$/ },
+  { method: "POST", path: /^\/cuenta\/email\/confirmar$/ },
+  // Recuperacion de la contrasena sin sesion (envia un mail con el codigo)
+  { method: "POST", path: /^\/recuperar$/ },
+  { method: "POST", path: /^\/recuperar\/password$/ },
 ];
 const GET_CON_EFECTOS = [
   /\/documentos\/resultado$/, // consulta DGI y actualiza el estado del CFE

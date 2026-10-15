@@ -63,7 +63,7 @@ export function MenuUsuario() {
     .join(" ");
 
   const items: MenuProps["items"] = [
-    { key: "password", icon: <LockOutlined />, label: "Cambiar contraseña" },
+    { key: "password", icon: <LockOutlined />, label: "Mi cuenta y contraseña" },
     { type: "divider" },
     {
       type: "group",
@@ -128,6 +128,11 @@ export function MenuUsuario() {
                 style={{ marginTop: 6 }}
               >
                 {cuenta.role === "ADMIN" ? "Administrador" : "Usuario"}
+              </Tag>
+            )}
+            {cuenta?.emailConfirmado === false && (
+              <Tag color="orange" style={{ marginTop: 6 }}>
+                Email sin confirmar
               </Tag>
             )}
           </div>

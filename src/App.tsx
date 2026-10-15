@@ -25,7 +25,14 @@ import routerProvider, {
 import { App as AntdApp } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+} from "react-router";
 import { STATUS_TIMEOUT } from "./api/http";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
@@ -43,8 +50,10 @@ import { EmpresaShow } from "./pages/empresas/show";
 import { SobreList } from "./pages/sobres/list";
 import { SobreShow } from "./pages/sobres/show";
 import { accessControlProvider } from "./providers/accessControlProvider";
-import { authProvider, debeCambiarPassword } from "./providers/authProvider";
+import { authProvider, pasoObligatorio } from "./providers/authProvider";
 import { CambiarPassword } from "./pages/cuenta/cambiarPassword";
+import { ConfirmarEmail } from "./pages/cuenta/confirmarEmail";
+import { Recuperar } from "./pages/cuenta/recuperar";
 import { dataProvider } from "./providers/dataProvider";
 import { i18nProvider } from "./providers/i18nProvider";
 
@@ -148,9 +157,10 @@ export default function App() {
                     key="app"
                     fallback={<CatchAllNavigate to="/login" />}
                   >
-                    {/* Con contrasena temporal solo se puede cambiarla (la API rechaza el resto) */}
-                    {debeCambiarPassword() ? (
-                      <Navigate to="/cambiar-password" replace />
+                    {/* Usuario nuevo sin el email confirmado o con contrasena temporal: solo puede confirmarlo y
+                        cambiarla, en ese orden (la API rechaza el resto) */}
+                    {pasoObligatorio() ? (
+                      <Navigate to={pasoObligatorio() ?? "/"} replace />
                     ) : (
                       <EmpresaProvider>
                         <ThemedLayout
@@ -200,6 +210,17 @@ export default function App() {
                 }
               />
               <Route
+                path="/confirmar-email"
+                element={
+                  <Authenticated
+                    key="confirmacion"
+                    fallback={<CatchAllNavigate to="/login" />}
+                  >
+                    <ConfirmarEmail />
+                  </Authenticated>
+                }
+              />
+              <Route
                 element={
                   <Authenticated key="auth" fallback={<Outlet />}>
                     <NavigateToResource resource="inicio" />
@@ -213,11 +234,20 @@ export default function App() {
                       type="login"
                       title={<ThemedTitle collapsed={false} text="efactura" />}
                       registerLink={false}
-                      forgotPasswordLink={false}
+                      forgotPasswordLink={
+                        <Link
+                          to="/recuperar"
+                          style={{ fontSize: 12, marginLeft: "auto" }}
+                        >
+                          ¿Olvidaste tu contraseña?
+                        </Link>
+                      }
                       rememberMe={false}
                     />
                   }
                 />
+                {/* Recuperacion de la contrasena: sin sesion, como el login */}
+                <Route path="/recuperar" element={<Recuperar />} />
               </Route>
             </Routes>
             <DocumentTitleHandler handler={() => "efactura"} />

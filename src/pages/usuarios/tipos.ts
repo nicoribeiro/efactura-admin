@@ -17,6 +17,8 @@ export interface Usuario {
   /** Ausentes en APIs anteriores a la administracion de usuarios */
   activo?: boolean;
   debeCambiarPassword?: boolean;
+  /** Ausente en APIs anteriores a la confirmacion de email */
+  emailConfirmado?: boolean;
   accesoTotal: boolean;
   empresas: { rut: string; razon?: string | null }[];
   sesiones: {

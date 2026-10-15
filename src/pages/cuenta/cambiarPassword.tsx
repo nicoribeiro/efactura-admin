@@ -1,13 +1,29 @@
-import { LockOutlined } from "@ant-design/icons";
+import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useLogout } from "@refinedev/core";
-import { Alert, App, Button, Card, Form, Input, Space, Typography } from "antd";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Divider,
+  Form,
+  Input,
+  Space,
+  Tag,
+  Typography,
+} from "antd";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router";
 import { apiJson } from "../../api/http";
 import {
+  cuentaActual,
   debeCambiarPassword,
+  debeConfirmarEmail,
+  marcarEmailConfirmado,
   marcarPasswordCambiada,
+  type Cuenta,
 } from "../../providers/authProvider";
+import { ConfirmacionEmail } from "./confirmarEmail";
 
 const MINIMO = 10;
 
@@ -18,8 +34,9 @@ interface Valores {
 }
 
 /**
- * Cambio de la contrasena propia. Con una contrasena temporal es lo unico que se puede hacer (la API rechaza el resto
- * hasta cambiarla); si no, se llega desde el encabezado.
+ * Cuenta propia: estado del email (con su confirmacion si falta) y cambio de la contrasena. Con una contrasena temporal
+ * es lo unico que se puede hacer (la API rechaza el resto hasta cambiarla); si no, se llega desde el encabezado. La API
+ * no permite cambiar la contrasena sin el email confirmado.
  */
 export function CambiarPassword() {
   const navigate = useNavigate();
@@ -28,6 +45,14 @@ export function CambiarPassword() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string>();
   const obligatorio = debeCambiarPassword();
+  const [cuenta, setCuenta] = useState<Cuenta | null>(null);
+
+  useEffect(() => {
+    cuentaActual().then(setCuenta);
+  }, []);
+
+  // Sin datos (API anterior a la confirmacion) no se bloquea: si falta, lo rechaza la API
+  const sinConfirmar = cuenta?.emailConfirmado === false;
 
   const guardar = async (v: Valores) => {
     setGuardando(true);
@@ -47,6 +72,9 @@ export function CambiarPassword() {
     }
   };
 
+  // El email se confirma antes que la contrasena temporal
+  if (debeConfirmarEmail()) return <Navigate to="/confirmar-email" replace />;
+
   return (
     <div
       style={{
@@ -58,7 +86,13 @@ export function CambiarPassword() {
       <Card style={{ width: "100%", maxWidth: 420 }}>
         <Space direction="vertical" size={16} style={{ width: "100%" }}>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            <LockOutlined /> Cambiar contraseña
+            {obligatorio ? (
+              <>
+                <LockOutlined /> Cambiar contraseña
+              </>
+            ) : (
+              "Mi cuenta"
+            )}
           </Typography.Title>
           {obligatorio && (
             <Alert
@@ -68,11 +102,49 @@ export function CambiarPassword() {
               description="Elegí una contraseña nueva para continuar."
             />
           )}
+          {cuenta && (
+            <>
+              <Space>
+                <MailOutlined />
+                <Typography.Text strong>{cuenta.emailAddress}</Typography.Text>
+                {cuenta.emailConfirmado !== undefined &&
+                  (cuenta.emailConfirmado ? (
+                    <Tag color="green">Confirmado</Tag>
+                  ) : (
+                    <Tag color="orange">Sin confirmar</Tag>
+                  ))}
+              </Space>
+              {sinConfirmar && (
+                <>
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="Para cambiar la contraseña primero confirmá tu email"
+                    description="Con el email confirmado también vas a poder recuperar la contraseña si te la olvidás."
+                  />
+                  <ConfirmacionEmail
+                    onConfirmado={(c) => {
+                      marcarEmailConfirmado(c);
+                      setCuenta(c);
+                      message.success("Email confirmado");
+                    }}
+                  />
+                </>
+              )}
+              <Divider style={{ margin: 0 }} />
+              {!obligatorio && (
+                <Typography.Text strong>
+                  <LockOutlined /> Cambiar contraseña
+                </Typography.Text>
+              )}
+            </>
+          )}
           {error && <Alert type="error" showIcon message={error} />}
           <Form<Valores>
             layout="vertical"
             onFinish={guardar}
             requiredMark={false}
+            disabled={sinConfirmar}
           >
             <Form.Item
               name="actual"
@@ -81,7 +153,10 @@ export function CambiarPassword() {
                 { required: true, message: "Ingresá la contraseña actual" },
               ]}
             >
-              <Input.Password autoComplete="current-password" autoFocus />
+              <Input.Password
+                autoComplete="current-password"
+                autoFocus={!sinConfirmar}
+              />
             </Form.Item>
             <Form.Item
               name="nueva"
@@ -115,9 +190,13 @@ export function CambiarPassword() {
             </Form.Item>
             <Space style={{ width: "100%", justifyContent: "space-between" }}>
               {obligatorio ? (
-                <Button onClick={() => logout()}>Salir</Button>
+                <Button onClick={() => logout()} disabled={false}>
+                  Salir
+                </Button>
               ) : (
-                <Button onClick={() => navigate(-1)}>Cancelar</Button>
+                <Button onClick={() => navigate(-1)} disabled={false}>
+                  Cancelar
+                </Button>
               )}
               <Button type="primary" htmlType="submit" loading={guardando}>
                 Guardar

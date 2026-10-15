@@ -4,11 +4,16 @@ import { apiJson, tokenStorage } from "../api/http";
 const EMAIL_KEY = "efactura-auth-email";
 /** Marca de contrasena temporal: hasta cambiarla, el panel solo muestra la pantalla de cambio */
 const DEBE_CAMBIAR_KEY = "efactura-debe-cambiar-password";
+/** Marca de usuario nuevo sin el email confirmado: hasta confirmarlo, el panel solo muestra la pantalla de confirmacion */
+const DEBE_CONFIRMAR_KEY = "efactura-debe-confirmar-email";
 
 interface SessionResponse {
   token: string;
   valid: boolean;
   debeCambiarPassword?: boolean;
+  /** Solo para usuarios nuevos que todavia no confirmaron su email */
+  debeConfirmarEmail?: boolean;
+  emailConfirmado?: boolean;
 }
 
 export type Rol = "ADMIN" | "USER";
@@ -21,6 +26,9 @@ export interface Cuenta {
   lastName?: string | null;
   role: Rol;
   debeCambiarPassword: boolean;
+  /** Ausentes en APIs anteriores a la confirmacion de email */
+  emailConfirmado?: boolean;
+  debeConfirmarEmail?: boolean;
 }
 
 /** Cuenta del usuario logueado, pedida una vez por sesion */
@@ -68,6 +76,32 @@ export function marcarPasswordCambiada() {
   cuentaCache = null;
 }
 
+export const debeConfirmarEmail = () => {
+  try {
+    return localStorage.getItem(DEBE_CONFIRMAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+/** Email confirmado: la cuenta actualizada (respuesta de /cuenta/email/confirmar) reemplaza la de la cache */
+export function marcarEmailConfirmado(cuenta?: Cuenta) {
+  localStorage.removeItem(DEBE_CONFIRMAR_KEY);
+  // La contrasena temporal se cambia despues de confirmar el email
+  if (cuenta?.debeCambiarPassword) localStorage.setItem(DEBE_CAMBIAR_KEY, "1");
+  const token = tokenStorage.get();
+  cuentaCache =
+    cuenta && token ? { token, cuenta: Promise.resolve(cuenta) } : null;
+}
+
+/** Pantalla a la que tiene que ir el usuario antes de usar el panel (primero el email, despues la contrasena) */
+export const pasoObligatorio = (): string | null =>
+  debeConfirmarEmail()
+    ? "/confirmar-email"
+    : debeCambiarPassword()
+      ? "/cambiar-password"
+      : null;
+
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
@@ -83,12 +117,14 @@ export const authProvider: AuthProvider = {
       tokenStorage.set(session.token);
       localStorage.setItem(EMAIL_KEY, email);
       cuentaCache = null;
-      if (session.debeCambiarPassword) {
+      // Usuario nuevo: primero confirma el email y despues cambia la contrasena temporal
+      if (session.debeConfirmarEmail)
+        localStorage.setItem(DEBE_CONFIRMAR_KEY, "1");
+      else localStorage.removeItem(DEBE_CONFIRMAR_KEY);
+      if (session.debeCambiarPassword)
         localStorage.setItem(DEBE_CAMBIAR_KEY, "1");
-        return { success: true, redirectTo: "/cambiar-password" };
-      }
-      localStorage.removeItem(DEBE_CAMBIAR_KEY);
-      return { success: true, redirectTo: "/" };
+      else localStorage.removeItem(DEBE_CAMBIAR_KEY);
+      return { success: true, redirectTo: pasoObligatorio() ?? "/" };
     } catch (error) {
       return {
         success: false,
@@ -106,6 +142,7 @@ export const authProvider: AuthProvider = {
     tokenStorage.clear();
     localStorage.removeItem(EMAIL_KEY);
     localStorage.removeItem(DEBE_CAMBIAR_KEY);
+    localStorage.removeItem(DEBE_CONFIRMAR_KEY);
     return { success: true, redirectTo: "/login" };
   },
 
@@ -123,6 +160,13 @@ export const authProvider: AuthProvider = {
 
   onError: async (error) => {
     if (error?.statusCode === 401) {
+      // Usuario nuevo sin el email confirmado: la API solo permite /cuenta hasta confirmarlo
+      if (
+        String(error?.message ?? "").includes("email_confirmation_required")
+      ) {
+        localStorage.setItem(DEBE_CONFIRMAR_KEY, "1");
+        return { redirectTo: "/confirmar-email" };
+      }
       // Contrasena temporal: la API solo permite /cuenta hasta cambiarla
       if (String(error?.message ?? "").includes("password_change_required")) {
         localStorage.setItem(DEBE_CAMBIAR_KEY, "1");
