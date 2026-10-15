@@ -459,6 +459,15 @@ export function SobreList() {
         onRow={(sobre) => ({ onDoubleClick: () => ver(sobre) })}
       >
         <Table.Column<SobreResumen>
+          title="Id"
+          dataIndex="id"
+          render={(id: number) => (
+            <Typography.Text type="secondary" copyable={{ text: String(id) }}>
+              {id}
+            </Typography.Text>
+          )}
+        />
+        <Table.Column<SobreResumen>
           title="Fecha"
           dataIndex="fecha"
           render={formatFechaDia}

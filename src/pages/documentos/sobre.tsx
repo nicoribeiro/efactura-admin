@@ -1,4 +1,4 @@
-import { Alert, Collapse, Descriptions, Empty, Skeleton } from "antd";
+import { Alert, Collapse, Descriptions, Empty, Skeleton, Typography } from "antd";
 import { Link } from "react-router";
 import { formatFechaApi, formatFechaDia } from "../../constants/cfe";
 import { XmlCode } from "../../components/XmlCode";
@@ -77,6 +77,9 @@ export function SobreDocumentoInfo({
   return (
     <>
       <Descriptions bordered size="small" column={2}>
+        <Descriptions.Item label="Id del sobre" span={2}>
+          <Typography.Text copyable>{String(sobre.id)}</Typography.Text>
+        </Descriptions.Item>
         <Descriptions.Item label="Archivo" span={2}>
           {sobre.nombreArchivo ?? "-"}
           {enlazar && (
