@@ -1,4 +1,4 @@
-import { RedoOutlined } from "@ant-design/icons";
+import { RedoOutlined, StopOutlined } from "@ant-design/icons";
 import { Alert, App, Button, Checkbox, Modal, Progress, Space, Tooltip, Typography } from "antd";
 import { useState } from "react";
 import { apiJson } from "../../api/http";
@@ -40,6 +40,50 @@ const resumen = (t: Totales) =>
 /** Reprocesa los adjuntos de un email que no estan procesados OK */
 const reintentar = (rut: string, emailId: number) =>
   apiJson<Reintento>("PUT", `/empresa/${rut}/emailEntrantes/${emailId}`, { accion: "RETRY" });
+
+/**
+ * Boton (solo ADMIN) para marcar como omitidos los adjuntos con error o pendientes de un email, ej. sobres viejos que
+ * no se van a poder procesar: dejan de figurar con error y "Reintentar todos" no los vuelve a intentar
+ */
+export function OmitirEmail({ rut, emailId, onTerminado }: { rut: string; emailId: number; onTerminado: () => void }) {
+  const { message, modal } = App.useApp();
+  const [cargando, setCargando] = useState(false);
+
+  const omitir = async () => {
+    setCargando(true);
+    try {
+      const r = await apiJson<{ omitidos: string[] }>("PUT", `/empresa/${rut}/emailEntrantes/${emailId}`, { accion: "OMIT" });
+      message.success(r.omitidos.length ? `Omitido: ${r.omitidos.join(", ")}` : "No había adjuntos para omitir");
+    } catch (e) {
+      message.error((e as { message?: string })?.message ?? "Error");
+    } finally {
+      setCargando(false);
+      onTerminado();
+    }
+  };
+
+  return (
+    <Tooltip title="Omitir">
+      <Button
+        size="small"
+        icon={<StopOutlined />}
+        loading={cargando}
+        onClick={(e) => {
+          e.stopPropagation();
+          modal.confirm({
+            title: "Omitir los adjuntos con error de este email",
+            content:
+              "Quedan como omitidos: no se procesan ni se vuelven a reintentar, y no se le responde nada al emisor. El error queda guardado.",
+            okText: "Omitir",
+            cancelText: "Cancelar",
+            onOk: omitir,
+          });
+        }}
+        aria-label="Omitir"
+      />
+    </Tooltip>
+  );
+}
 
 /** Boton para reintentar un email con adjuntos con error o pendientes */
 export function ReintentarEmail({

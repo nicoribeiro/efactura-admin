@@ -21,13 +21,14 @@ import {
   Typography,
 } from "antd";
 import type { Dayjs } from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
 import { CarpetasImap } from "./carpetas";
-import { ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
+import { rolUsuario } from "../../providers/authProvider";
+import { OmitirEmail, ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
 import { ordenar } from "../../utils/orden";
 
 type EstadoAdjunto =
@@ -148,6 +149,11 @@ function DescargarAdjunto({
 
 /** Emails recibidos por una empresa; se pueden reintentar los que tienen adjuntos con error o pendientes */
 export function EmailsTable({ rut }: { rut: string }) {
+  // Omitir adjuntos con error: solo ADMIN
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
+    rolUsuario().then((r) => setEsAdmin(r === "ADMIN"));
+  }, []);
   // Emails abiertos (con sus adjuntos a la vista): con la flecha o haciendo clic en el id
   const [abiertos, setAbiertos] = useState<number[]>([]);
   const alternar = (id: number) =>
@@ -403,22 +409,27 @@ export function EmailsTable({ rut }: { rut: string }) {
         />
         <Table.Column<EmailRecibido>
           title=""
-          width={56}
+          width={esAdmin ? 96 : 56}
           render={(_, email) =>
             email.attachments.some(
               (a) => a.estado === "PROCESADO_ERROR" || a.estado === "PENDIENTE",
             ) ? (
-              <ReintentarEmail
-                rut={rut}
-                emailId={email.id}
-                conSobre={email.attachments.some(
-                  (a) =>
-                    /^Sob/i.test(a.name ?? "") &&
-                    (a.estado === "PROCESADO_ERROR" || a.estado === "PENDIENTE"),
+              <Space size={4}>
+                <ReintentarEmail
+                  rut={rut}
+                  emailId={email.id}
+                  conSobre={email.attachments.some(
+                    (a) =>
+                      /^Sob/i.test(a.name ?? "") &&
+                      (a.estado === "PROCESADO_ERROR" || a.estado === "PENDIENTE"),
+                  )}
+                  soloIcono
+                  onTerminado={() => tableQuery.refetch()}
+                />
+                {esAdmin && (
+                  <OmitirEmail rut={rut} emailId={email.id} onTerminado={() => tableQuery.refetch()} />
                 )}
-                soloIcono
-                onTerminado={() => tableQuery.refetch()}
-              />
+              </Space>
             ) : null
           }
         />
