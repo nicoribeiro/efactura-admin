@@ -29,6 +29,8 @@ export interface Empresa {
   diasRespuestaCfe?: number | null;
   /** El que rige (el de la empresa o el de la configuracion) */
   diasRespuestaCfeEfectivo?: number;
+  /** false = dada de baja: los procesos automaticos (avisos, emails entrantes, reporte diario) no la procesan */
+  activa?: boolean;
 }
 
 /** Version reducida que la API incluye dentro de CFE, sobres, CAE y reportes */

@@ -46,7 +46,20 @@ export function EmpresaList() {
 
       <Table {...tableProps} rowKey="rut" size="middle" onRow={(empresa) => ({ onDoubleClick: () => ver(empresa) })}>
         <Table.Column dataIndex="rut" title="RUT" />
-        <Table.Column dataIndex="razon" title="Razón social" />
+        <Table.Column<Empresa>
+          dataIndex="razon"
+          title="Razón social"
+          render={(razon: string, empresa) => (
+            <>
+              {razon}
+              {empresa.activa === false && (
+                <Tag color="red" style={{ marginLeft: 8 }}>
+                  De baja
+                </Tag>
+              )}
+            </>
+          )}
+        />
         <Table.Column dataIndex="nombreComercial" title="Nombre comercial" />
         <Table.Column
           dataIndex="emisorElectronico"

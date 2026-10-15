@@ -67,6 +67,9 @@ export function EmpresaShow() {
                   <Descriptions.Item label="Emisor electrónico">
                     {empresa.emisorElectronico ? <Tag color="green">Sí</Tag> : <Tag>No</Tag>}
                   </Descriptions.Item>
+                  <Descriptions.Item label="Estado">
+                    {empresa.activa === false ? <Tag color="red">Dada de baja</Tag> : <Tag color="green">Activa</Tag>}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Resolución">{empresa.resolucion}</Descriptions.Item>
                   <Descriptions.Item label="Página web">{empresa.paginaWeb}</Descriptions.Item>
                   <Descriptions.Item label="Mail recepción">{empresa.mailRecepcion}</Descriptions.Item>

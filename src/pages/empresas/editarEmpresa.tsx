@@ -1,4 +1,4 @@
-import { App, Divider, Form, Input, Modal } from "antd";
+import { Alert, App, Divider, Form, Input, Modal, Switch } from "antd";
 import { useState } from "react";
 import { apiJson } from "../../api/http";
 import type { Empresa } from "../../contexts/empresa";
@@ -19,7 +19,7 @@ const CAMPOS = [
 ] as const;
 
 type Campo = (typeof CAMPOS)[number];
-type Valores = Partial<Record<Campo, string>> & { passRecepcion?: string };
+type Valores = Partial<Record<Campo, string>> & { passRecepcion?: string; activa?: boolean };
 
 /**
  * Edicion de los datos generales y de correo de una empresa (solo ADMIN). Se envian solo los campos que cambiaron; la
@@ -38,20 +38,25 @@ export function EditarEmpresa({
   const [form] = Form.useForm<Valores>();
   const [guardando, setGuardando] = useState(false);
 
-  const iniciales: Valores = Object.fromEntries(
-    CAMPOS.map((c) => {
-      const valor = empresa[c as keyof Empresa];
-      return [c, valor == null ? "" : String(valor)];
-    }),
-  );
+  const iniciales: Valores = {
+    ...Object.fromEntries(
+      CAMPOS.map((c) => {
+        const valor = empresa[c as keyof Empresa];
+        return [c, valor == null ? "" : String(valor)];
+      }),
+    ),
+    activa: empresa.activa !== false,
+  };
+  const activa = Form.useWatch("activa", form);
 
   const guardar = async (valores: Valores) => {
-    const cambios: Record<string, string> = {};
+    const cambios: Record<string, string | boolean> = {};
     for (const campo of CAMPOS) {
       const nuevo = (valores[campo] ?? "").trim();
       if (nuevo !== (iniciales[campo] ?? "")) cambios[campo] = nuevo;
     }
     if (valores.passRecepcion) cambios.passRecepcion = valores.passRecepcion;
+    if (valores.activa !== undefined && valores.activa !== iniciales.activa) cambios.activa = valores.activa;
 
     if (Object.keys(cambios).length === 0) {
       message.info("No hay cambios");
@@ -187,6 +192,25 @@ export function EditarEmpresa({
         >
           <Input style={{ width: 120 }} placeholder="Por defecto" />
         </Form.Item>
+
+        <Divider orientation="left" plain>
+          Estado
+        </Divider>
+        <Form.Item
+          name="activa"
+          label="Empresa activa"
+          valuePropName="checked"
+          extra="Desactivala si la empresa dejó de usar el sistema (por ejemplo, si cerró)."
+        >
+          <Switch checkedChildren="Activa" unCheckedChildren="De baja" />
+        </Form.Item>
+        {activa === false && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Dada de baja: no se le envían avisos (vencimiento de firma y CAE), no se leen sus mails entrantes y no se incluye en el reporte diario automático."
+          />
+        )}
       </Form>
     </Modal>
   );
