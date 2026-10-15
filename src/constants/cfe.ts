@@ -98,9 +98,29 @@ export const TIPOS_DOC: { id: number; name: string; label: string }[] = [
     label: "eTicket Cta. Ajena Contingencia",
   },
   {
+    id: 232,
+    name: "Nota_de_Credito_de_eTicket_Venta_por_Cuenta_Ajena_Contingencia",
+    label: "NC eTicket Cta. Ajena Contingencia",
+  },
+  {
+    id: 233,
+    name: "Nota_de_Debito_de_eTicket_Venta_por_Cuenta_Ajena_Contingencia",
+    label: "ND eTicket Cta. Ajena Contingencia",
+  },
+  {
     id: 241,
     name: "eFactura_Venta_por_Cuenta_Ajena_Contingencia",
     label: "eFactura Cta. Ajena Contingencia",
+  },
+  {
+    id: 242,
+    name: "Nota_de_Credito_de_eFactura_Venta_por_Cuenta_Ajena_Contingencia",
+    label: "NC eFactura Cta. Ajena Contingencia",
+  },
+  {
+    id: 243,
+    name: "Nota_de_Debito_de_eFactura_Venta_por_Cuenta_Ajena_Contingencia",
+    label: "ND eFactura Cta. Ajena Contingencia",
   },
   { id: 281, name: "eRemito_Contingencia", label: "eRemito Contingencia" },
   {
