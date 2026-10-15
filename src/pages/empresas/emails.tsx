@@ -26,6 +26,7 @@ import { useSearchParams } from "react-router";
 import { apiBlob } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
+import { mismoRango, rangosRapidos } from "../../utils/rangos";
 import { CarpetasImap } from "./carpetas";
 import { rolUsuario } from "../../providers/authProvider";
 import { OmitirEmail, ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
@@ -58,9 +59,14 @@ interface EmailRecibido {
 
 type FiltroAdjuntos = "si" | "no" | "todos";
 
+/** Rango del filtro de fecha para la API: desde el comienzo del primer dia hasta el final del ultimo (inclusive) */
+const aFiltroFecha = (fecha?: [Dayjs | null, Dayjs | null] | null) =>
+  fecha?.[0] && fecha?.[1] ? [fecha[0].startOf("day").toDate(), fecha[1].endOf("day").toDate()] : undefined;
+
 interface FiltrosForm {
   adjuntos?: FiltroAdjuntos;
-  estado?: EstadoAdjunto;
+  /** TODOS = sin filtrar por estado */
+  estado?: EstadoAdjunto | "TODOS";
   fecha?: [Dayjs | null, Dayjs | null] | null;
   q?: string;
 }
@@ -161,6 +167,8 @@ export function EmailsTable({ rut }: { rut: string }) {
   // ?estado=PROCESADO_ERROR (link de "Atención" en el tablero)
   const [params] = useSearchParams();
   const estadoInicial = params.get("estado") as EstadoAdjunto | null;
+  // Por defecto los de hoy; desde el link de "Atención" (un estado) todas las fechas, los errores pueden ser viejos
+  const [fechaInicial] = useState(() => (estadoInicial ? null : rangosRapidos()[0].value));
 
   const { tableProps, searchFormProps, tableQuery } = useTable<
     EmailRecibido,
@@ -175,6 +183,9 @@ export function EmailsTable({ rut }: { rut: string }) {
     filters: {
       initial: [
         { field: "adjuntos", operator: "eq", value: "si" },
+        ...(fechaInicial
+          ? [{ field: "fecha", operator: "eq" as const, value: aFiltroFecha(fechaInicial) }]
+          : []),
         ...(estadoInicial
           ? [{ field: "estado", operator: "eq" as const, value: estadoInicial }]
           : []),
@@ -186,15 +197,18 @@ export function EmailsTable({ rut }: { rut: string }) {
         operator: "eq",
         value: values.adjuntos === "todos" ? undefined : values.adjuntos,
       },
-      { field: "estado", operator: "eq", value: values.estado },
+      { field: "estado", operator: "eq", value: values.estado === "TODOS" ? undefined : values.estado },
       {
         field: "fecha",
         operator: "eq",
-        value: values.fecha ? values.fecha.map((d) => d?.toDate()) : undefined,
+        value: aFiltroFecha(values.fecha),
       },
       { field: "q", operator: "eq", value: values.q?.trim() || undefined },
     ],
   });
+
+  // Rango elegido: resalta el boton rapido que corresponde
+  const fecha = Form.useWatch("fecha", searchFormProps.form) as FiltrosForm["fecha"];
 
   if (tableQuery.isError)
     return (
@@ -217,7 +231,7 @@ export function EmailsTable({ rut }: { rut: string }) {
         {...searchFormProps}
         layout="inline"
         style={{ marginBottom: 16, rowGap: 8 }}
-        initialValues={{ adjuntos: "si", estado: estadoInicial ?? undefined }}
+        initialValues={{ adjuntos: "si", estado: estadoInicial ?? "TODOS", fecha: fechaInicial }}
       >
         <Form.Item name="adjuntos" label="Adjuntos">
           <Select<FiltroAdjuntos>
@@ -231,16 +245,15 @@ export function EmailsTable({ rut }: { rut: string }) {
         </Form.Item>
         <Form.Item name="estado" label="Estado">
           <Select
-            allowClear
             style={{ width: 160 }}
-            placeholder="Todos"
-            options={Object.entries(ESTADOS_ADJUNTO).map(
-              ([value, { label }]) => ({ value, label }),
-            )}
+            options={[
+              { value: "TODOS", label: "Todos" },
+              ...Object.entries(ESTADOS_ADJUNTO).map(([value, { label }]) => ({ value, label })),
+            ]}
           />
         </Form.Item>
         <Form.Item name="fecha" label="Fecha">
-          <DatePicker.RangePicker format="DD/MM/YYYY" />
+          <DatePicker.RangePicker format="DD/MM/YYYY" presets={rangosRapidos()} />
         </Form.Item>
         <Form.Item name="q" label="Buscar">
           <Input
@@ -258,6 +271,21 @@ export function EmailsTable({ rut }: { rut: string }) {
           <ReintentarTodos rut={rut} onTerminado={() => tableQuery.refetch()} />
         </Form.Item>
       </Form>
+      <Space wrap size={[8, 8]} style={{ marginBottom: 16 }}>
+        {[...rangosRapidos(), { label: "Todas", value: null }].map(({ label, value }) => (
+          <Button
+            key={label}
+            size="small"
+            type={(value ? mismoRango(fecha, value) : !fecha?.[0]) ? "primary" : "default"}
+            onClick={() => {
+              searchFormProps.form?.setFieldValue("fecha", value);
+              searchFormProps.form?.submit();
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </Space>
 
       <Table<EmailRecibido>
         {...tableProps}
