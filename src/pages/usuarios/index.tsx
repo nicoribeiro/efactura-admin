@@ -22,6 +22,7 @@ import { Link } from "react-router";
 import { apiJson } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { navegador } from "../../utils/userAgent";
+import { ordenar } from "../../utils/orden";
 import { cuentaActual } from "../../providers/authProvider";
 import { AccionesUsuario } from "./acciones";
 import { FormularioUsuario } from "./formulario";
@@ -53,6 +54,8 @@ const MODOS: Record<Modo, { color: string; texto: string }> = {
 const fecha = (v?: string | null) => (v ? dayjs(v.slice(0, 19)) : undefined);
 const ultimoUso = (u: Usuario) =>
   fecha(u.sesiones.ultima?.ultimoAcceso) ?? fecha(u.sesiones.ultima?.creada);
+const nombre = (u: Usuario) =>
+  [u.firstName, u.lastName].filter(Boolean).join(" ");
 
 /**
  * Usuarios de la API (solo lectura, solo ADMIN): rol, empresas a las que tienen acceso, sesiones y modos de seguridad.
@@ -257,11 +260,10 @@ export function Usuarios() {
       >
         <Table.Column<Usuario>
           title="Usuario"
+          sorter={ordenar<Usuario>((u) => nombre(u) || u.emailAddress)}
           render={(_, u) => (
             <div>
-              <div>
-                {[u.firstName, u.lastName].filter(Boolean).join(" ") || "-"}
-              </div>
+              <div>{nombre(u) || "-"}</div>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 {u.emailAddress}
               </Typography.Text>
@@ -280,6 +282,9 @@ export function Usuarios() {
         />
         <Table.Column<Usuario>
           title="Rol"
+          sorter={ordenar<Usuario>((u) =>
+            u.role === "ADMIN" ? "Administrador" : "Usuario",
+          )}
           render={(_, u) =>
             u.role === "ADMIN" ? (
               <Tag color="purple">Administrador</Tag>
@@ -290,6 +295,10 @@ export function Usuarios() {
         />
         <Table.Column<Usuario>
           title="Empresas"
+          // Por cantidad de empresas; acceso total (por rol) al final
+          sorter={ordenar<Usuario>((u) =>
+            u.accesoTotal ? Number.MAX_SAFE_INTEGER : u.empresas.length,
+          )}
           render={(_, u) =>
             u.accesoTotal ? (
               <Typography.Text type="secondary">
@@ -312,6 +321,7 @@ export function Usuarios() {
         />
         <Table.Column<Usuario>
           title="Último acceso"
+          sorter={ordenar<Usuario>((u) => ultimoUso(u)?.valueOf())}
           render={(_, u) => {
             const s = u.sesiones.ultima;
             const uso = ultimoUso(u);
@@ -355,6 +365,7 @@ export function Usuarios() {
         <Table.Column<Usuario>
           title="Sesiones"
           align="right"
+          sorter={ordenar<Usuario>((u) => u.sesiones.vigentes)}
           render={(_, u) => (
             <Tooltip
               title={`${u.sesiones.vigentes} vigentes, ${u.sesiones.vencidas} vencidas según las reglas de expiración, ${u.sesiones.total} en total (incluye cerradas)`}
@@ -373,6 +384,7 @@ export function Usuarios() {
         />
         <Table.Column<Usuario>
           title="Alta"
+          sorter={ordenar<Usuario>((u) => u.creado)}
           render={(_, u) =>
             u.creado ? formatFechaApi(u.creado).slice(0, 10) : "-"
           }

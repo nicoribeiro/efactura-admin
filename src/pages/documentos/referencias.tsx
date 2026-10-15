@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { apiJson } from "../../api/http";
 import { ESTADOS_CFE, TIPOS_DOC, estadoDgiMostrado, tipoDocByName } from "../../constants/cfe";
 import { urlDocumento } from "../../utils/busqueda";
+import { ordenar } from "../../utils/orden";
 import { referenciasDelXml, type ReferenciaCfe } from "../../utils/referencias";
 import type { Documento } from "./list";
 import type { EstadoSobre } from "./useSobre";
@@ -25,6 +26,21 @@ const monto = (n?: number | null) =>
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
+
+/** Texto del comprobante referenciado, como se ve en la tabla */
+const textoReferencia = (r: ReferenciaCfe) =>
+  r.global
+    ? "Referencia global"
+    : `${TIPOS_DOC.find((t) => t.id === r.idTipoDoc)?.label ?? r.idTipoDoc ?? "?"} ${r.serie ?? "?"}-${r.nro ?? "?"}`;
+
+const textoDocumento = (d: Documento) =>
+  `${tipoDocByName(d.tipo)?.label ?? d.tipo} ${d.serie}-${d.nro}`;
+
+/** Estado de DGI como se ve en la tabla */
+const textoEstado = (d: DocumentoConReferencia) => {
+  const estado = estadoDgiMostrado(d.estado, d.sobreEmitido?.estadoDgi);
+  return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : "Sin respuesta";
+};
 
 const NoInformado = ({ ayuda }: { ayuda: string }) => (
   <Tooltip title={ayuda}>
@@ -140,16 +156,17 @@ export function ReferenciasDocumento({
             >
               <Table.Column<ReferenciaCfe>
                 title="Comprobante"
+                sorter={ordenar<ReferenciaCfe>(textoReferencia)}
                 render={(_, r) => {
                   if (r.global) return <Tag>Referencia global</Tag>;
-                  const tipo = TIPOS_DOC.find((t) => t.id === r.idTipoDoc);
-                  const texto = `${tipo?.label ?? r.idTipoDoc ?? "?"} ${r.serie ?? "?"}-${r.nro ?? "?"}`;
+                  const texto = textoReferencia(r);
                   const url = urlReferencia(r);
                   return url ? <Link to={url}>{texto}</Link> : texto;
                 }}
               />
               <Table.Column<ReferenciaCfe>
                 title="Fecha informada"
+                sorter={ordenar<ReferenciaCfe>((r) => (r.global ? null : r.fecha))}
                 render={(_, r) =>
                   r.global ? (
                     "-"
@@ -165,6 +182,7 @@ export function ReferenciasDocumento({
               <Table.Column<ReferenciaCfe>
                 title="Monto informado"
                 align="right"
+                sorter={ordenar<ReferenciaCfe>((r) => (r.global ? null : r.monto))}
                 render={(_, r) =>
                   r.global ? (
                     "-"
@@ -179,6 +197,7 @@ export function ReferenciasDocumento({
               />
               <Table.Column<ReferenciaCfe>
                 title="Razón"
+                sorter={ordenar<ReferenciaCfe>((r) => r.razon)}
                 render={(_, r) => r.razon || "-"}
               />
             </Table>
@@ -198,14 +217,16 @@ export function ReferenciasDocumento({
             >
               <Table.Column<DocumentoConReferencia>
                 title="Comprobante"
+                sorter={ordenar<DocumentoConReferencia>(textoDocumento)}
                 render={(_, d) => {
-                  const texto = `${tipoDocByName(d.tipo)?.label ?? d.tipo} ${d.serie}-${d.nro}`;
+                  const texto = textoDocumento(d);
                   const url = urlDocumento(d, "EMITIDO");
                   return url ? <Link to={url}>{texto}</Link> : texto;
                 }}
               />
               <Table.Column<DocumentoConReferencia>
                 title="Fecha"
+                sorter={ordenar<DocumentoConReferencia>((d) => d.fechaEmision)}
                 render={(_, d) =>
                   d.fechaEmision
                     ? dayjs(d.fechaEmision.slice(0, 10)).format("DD/MM/YYYY")
@@ -215,12 +236,14 @@ export function ReferenciasDocumento({
               <Table.Column<DocumentoConReferencia>
                 title="Total"
                 align="right"
+                sorter={ordenar<DocumentoConReferencia>((d) => d.totMntTotal)}
                 render={(_, d) =>
                   `${d.moneda ?? ""} ${monto(d.totMntTotal) ?? "-"}`
                 }
               />
               <Table.Column<DocumentoConReferencia>
                 title="Estado DGI"
+                sorter={ordenar<DocumentoConReferencia>(textoEstado)}
                 render={(_, d) => {
                   const estado = estadoDgiMostrado(d.estado, d.sobreEmitido?.estadoDgi);
                   return estado ? (
@@ -234,6 +257,7 @@ export function ReferenciasDocumento({
               />
               <Table.Column<DocumentoConReferencia>
                 title="Razón"
+                sorter={ordenar<DocumentoConReferencia>((d) => d.razonReferencia)}
                 render={(_, d) => d.razonReferencia || "-"}
               />
             </Table>

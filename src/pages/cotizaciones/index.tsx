@@ -17,6 +17,7 @@ import {
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { apiJson } from "../../api/http";
+import { ordenar } from "../../utils/orden";
 import { GraficoCotizacion } from "./grafico";
 
 interface Cotizacion {
@@ -69,6 +70,16 @@ const numero = (v?: number | null, decimales = 3) =>
       });
 
 const esFinDeSemana = (fecha: string) => [0, 6].includes(dayjs(fecha).day());
+
+/** Estado del dia como se ve en la tabla (para ordenar por esa columna) */
+const estadoDia = (f: FilaDia) =>
+  !f.falta
+    ? null
+    : esHoy(f.fecha)
+      ? "Pendiente"
+      : esFinDeSemana(f.fecha)
+        ? "Sin cotización (fin de semana)"
+        : "Sin cotización";
 
 /**
  * Cotizaciones de INE que guarda la API y Unidad Indexada por año (solo lectura). Arriba, si están los valores que
@@ -221,11 +232,16 @@ export function Cotizaciones() {
                 hideOnSinglePage: true,
               }}
             >
-              <Table.Column<ValorUI> title="Año" dataIndex="anio" />
+              <Table.Column<ValorUI>
+                title="Año"
+                dataIndex="anio"
+                sorter={ordenar<ValorUI>((u) => u.anio)}
+              />
               <Table.Column<ValorUI>
                 title="Valor (UYU)"
                 dataIndex="cotizacion"
                 align="right"
+                sorter={ordenar<ValorUI>((u) => u.cotizacion)}
                 render={(v: number) => numero(v, 4)}
               />
             </Table>
@@ -300,6 +316,7 @@ export function Cotizaciones() {
                 >
                   <Table.Column<FilaDia>
                     title="Fecha"
+                    sorter={ordenar<FilaDia>((f) => f.fecha)}
                     render={(_, f) => (
                       <span style={{ whiteSpace: "nowrap" }}>
                         {dayjs(f.fecha).format("ddd DD/MM/YYYY")}
@@ -309,20 +326,24 @@ export function Cotizaciones() {
                   <Table.Column<FilaDia>
                     title="Compra"
                     align="right"
+                    sorter={ordenar<FilaDia>((f) => f.compra)}
                     render={(_, f) => (f.falta ? "" : numero(f.compra))}
                   />
                   <Table.Column<FilaDia>
                     title="Venta"
                     align="right"
+                    sorter={ordenar<FilaDia>((f) => f.venta)}
                     render={(_, f) => (f.falta ? "" : numero(f.venta))}
                   />
                   <Table.Column<FilaDia>
                     title="Interbancario"
                     align="right"
+                    sorter={ordenar<FilaDia>((f) => f.interbancario)}
                     render={(_, f) => (f.falta ? "" : numero(f.interbancario))}
                   />
                   <Table.Column<FilaDia>
                     title=""
+                    sorter={ordenar<FilaDia>((f) => estadoDia(f))}
                     render={(_, f) =>
                       f.falta && esHoy(f.fecha) ? (
                         <Tag>Pendiente (se carga mañana)</Tag>

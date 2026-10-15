@@ -9,6 +9,7 @@ import {
   parsearReporte,
   parsearRespuesta,
 } from "../../utils/reporte";
+import { ordenar } from "../../utils/orden";
 
 const tipoLabel = (tipoComp?: number, seccion?: string) => {
   const tipo =
@@ -49,6 +50,10 @@ const rangosTexto = (rangos: Rango[]) =>
     </Space>
   );
 
+/** Rangos como texto, para ordenar por esas columnas */
+const rangosOrden = (rangos: Rango[]) =>
+  rangos.map((r) => `${r.serie}-${r.desde}`).join(" ") || null;
+
 const totalTipo = (resumen: ResumenTipo) => {
   const valores = resumen.montos
     .map((m) => Number(m.TotMntTotal))
@@ -79,6 +84,11 @@ function TablaMontos({ items }: { items: ItemMontos[] }) {
           title={ETIQUETAS_MONTOS[clave] ?? clave}
           dataIndex={clave}
           align={["Fecha", "CodSuc"].includes(clave) ? "left" : "right"}
+          sorter={ordenar<ItemMontos>((item) =>
+            ["Fecha", "CodSuc"].includes(clave) || !item[clave]
+              ? item[clave]
+              : Number(item[clave]),
+          )}
           render={(valor: string) =>
             ["Fecha", "CodSuc"].includes(clave) || clave.startsWith("IVATasa")
               ? valor
@@ -174,6 +184,9 @@ export function ReporteDetalle({
         >
           <Table.Column<ResumenTipo>
             title="Tipo"
+            sorter={ordenar<ResumenTipo>((resumen) =>
+              tipoLabel(resumen.tipoComp, resumen.seccion),
+            )}
             render={(_, resumen) =>
               tipoLabel(resumen.tipoComp, resumen.seccion)
             }
@@ -182,16 +195,19 @@ export function ReporteDetalle({
             title="Emitidos"
             dataIndex="cantEmitidos"
             align="right"
+            sorter={ordenar<ResumenTipo>((resumen) => resumen.cantEmitidos)}
           />
           <Table.Column<ResumenTipo>
             title="Utilizados"
             dataIndex="cantUtilizados"
             align="right"
+            sorter={ordenar<ResumenTipo>((resumen) => resumen.cantUtilizados)}
           />
           <Table.Column<ResumenTipo>
             title="Anulados"
             dataIndex="cantAnulados"
             align="right"
+            sorter={ordenar<ResumenTipo>((resumen) => resumen.cantAnulados)}
             render={(n?: number) =>
               n ? (
                 <Typography.Text type="danger">{n}</Typography.Text>
@@ -202,15 +218,18 @@ export function ReporteDetalle({
           />
           <Table.Column<ResumenTipo>
             title="Rangos utilizados"
+            sorter={ordenar<ResumenTipo>((resumen) => rangosOrden(resumen.rangosUtilizados))}
             render={(_, resumen) => rangosTexto(resumen.rangosUtilizados)}
           />
           <Table.Column<ResumenTipo>
             title="Rangos anulados"
+            sorter={ordenar<ResumenTipo>((resumen) => rangosOrden(resumen.rangosAnulados))}
             render={(_, resumen) => rangosTexto(resumen.rangosAnulados)}
           />
           <Table.Column<ResumenTipo>
             title="Total"
             align="right"
+            sorter={ordenar<ResumenTipo>(totalTipo)}
             render={(_, resumen) => {
               const total = totalTipo(resumen);
               return total === undefined ? "-" : formatoMonto(String(total));

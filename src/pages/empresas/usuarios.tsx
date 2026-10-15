@@ -1,5 +1,9 @@
 import { useList } from "@refinedev/core";
 import { Alert, Table, Tag, Typography } from "antd";
+import { ordenar } from "../../utils/orden";
+
+const nombre = (u: { firstName?: string | null; lastName?: string | null }) =>
+  [u.firstName, u.lastName].filter(Boolean).join(" ");
 
 interface UsuarioEmpresa {
   id: number;
@@ -44,14 +48,20 @@ export function UsuariosTable({ rut }: { rut: string }) {
   return (
     <>
       <Table<UsuarioEmpresa> dataSource={usuarios} loading={query.isLoading} rowKey="id" size="middle" pagination={false}>
-        <Table.Column<UsuarioEmpresa> title="Email" dataIndex="emailAddress" />
+        <Table.Column<UsuarioEmpresa>
+          title="Email"
+          dataIndex="emailAddress"
+          sorter={ordenar<UsuarioEmpresa>((u) => u.emailAddress)}
+        />
         <Table.Column<UsuarioEmpresa>
           title="Nombre"
-          render={(_, u) => [u.firstName, u.lastName].filter(Boolean).join(" ") || "-"}
+          render={(_, u) => nombre(u) || "-"}
+          sorter={ordenar<UsuarioEmpresa>(nombre)}
         />
         <Table.Column<UsuarioEmpresa>
           title="Acceso"
           dataIndex="acceso"
+          sorter={ordenar<UsuarioEmpresa>((u) => (u.acceso === "ADMIN" ? "Administrador (todas las empresas)" : "Asignado"))}
           render={(acceso: UsuarioEmpresa["acceso"]) =>
             acceso === "ADMIN" ? <Tag color="purple">Administrador (todas las empresas)</Tag> : <Tag color="blue">Asignado</Tag>
           }

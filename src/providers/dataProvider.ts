@@ -1,4 +1,4 @@
-import type { BaseRecord, CrudFilter, DataProvider, GetListParams, GetOneParams } from "@refinedev/core";
+import type { BaseRecord, CrudFilter, CrudSort, DataProvider, GetListParams, GetOneParams } from "@refinedev/core";
 import { API_URL, apiJson, type QueryParams } from "../api/http";
 
 /** Respuesta paginada de la API (JSONUtils.createObjectList) */
@@ -39,6 +39,15 @@ function filtersToQuery(filters: CrudFilter[] | undefined): QueryParams {
   return query;
 }
 
+/**
+ * Orden pedido en la tabla (una columna) como lo espera la API: ?orden=campo&sentido=asc|desc. El campo es el
+ * dataIndex de la columna; la API valida que se pueda ordenar por el.
+ */
+function sortersToQuery(sorters: CrudSort[] | undefined): QueryParams {
+  const sorter = sorters?.[0];
+  return sorter ? { orden: sorter.field, sentido: sorter.order } : {};
+}
+
 function requireRut(meta: Record<string, unknown> | undefined): string {
   const rut = meta?.rut as string | undefined;
   if (!rut) throw { message: "Seleccione una empresa", statusCode: 400 };
@@ -53,7 +62,7 @@ const notSupported = (operation: string) => () => {
 export const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
 
-  getList: async <TData extends BaseRecord = BaseRecord>({ resource, pagination, filters, meta }: GetListParams) => {
+  getList: async <TData extends BaseRecord = BaseRecord>({ resource, pagination, filters, sorters, meta }: GetListParams) => {
     const currentPage = pagination?.currentPage ?? 1;
     const pageSize = Math.min(pagination?.pageSize ?? 20, MAX_PAGE_SIZE);
 
@@ -62,14 +71,14 @@ export const dataProvider: DataProvider = {
         // Paginado en la API (filtros: q, emisorElectronico, conFirma). Nunca se pide la lista completa:
         // puede tener decenas de miles de empresas (lista de emisores de DGI).
         const size = Math.min(pagination?.pageSize ?? 20, MAX_PAGE_SIZE_EMPRESAS);
-        const query = { ...filtersToQuery(filters), page: currentPage, pageSize: size };
+        const query = { ...filtersToQuery(filters), ...sortersToQuery(sorters), page: currentPage, pageSize: size };
         const list = await apiJson<ObjectList<BaseRecord>>("GET", "/empresa", query);
         return { data: list.results as TData[], total: list.count };
       }
 
       case "documentos": {
         const rut = requireRut(meta);
-        const query = { ...filtersToQuery(filters), page: currentPage, pageSize };
+        const query = { ...filtersToQuery(filters), ...sortersToQuery(sorters), page: currentPage, pageSize };
         const list = await apiJson<ObjectList<BaseRecord>>("GET", `/empresa/${rut}/documentos`, query);
         return { data: list.results as TData[], total: list.count };
       }
@@ -78,7 +87,7 @@ export const dataProvider: DataProvider = {
         // Emails recibidos por la empresa (paginado en la API, maximo 50). Fechas: desde/hasta en segundos.
         const rut = requireRut(meta);
         const { fromDate, toDate, ...resto } = filtersToQuery(filters);
-        const query = { ...resto, desde: fromDate, hasta: toDate, page: currentPage, pageSize };
+        const query = { ...resto, ...sortersToQuery(sorters), desde: fromDate, hasta: toDate, page: currentPage, pageSize };
         const list = await apiJson<ObjectList<BaseRecord>>("GET", `/empresa/${rut}/emails`, query);
         return { data: list.results as TData[], total: list.count };
       }
@@ -107,7 +116,12 @@ export const dataProvider: DataProvider = {
       case "sobres": {
         // Sobres emitidos o recibidos (paginado en la API, maximo 50), con sus comprobantes resumidos
         const rut = requireRut(meta);
-        const query = { ...filtersToQuery(filters), page: currentPage, pageSize };
+        const filtros = filtersToQuery(filters);
+        // Al cambiar de emitidos a recibidos puede quedar el orden por una columna que solo tiene la otra direccion
+        const soloDeLaOtra =
+          filtros.direccion === "RECIBIDO" ? ["estadoDgi", "fechaConsulta"] : ["timestampRecibido"];
+        const orden = (sorters ?? []).filter((s) => !soloDeLaOtra.includes(s.field));
+        const query = { ...filtros, ...sortersToQuery(orden), page: currentPage, pageSize };
         const list = await apiJson<ObjectList<BaseRecord>>("GET", `/empresa/${rut}/sobres`, query);
         return { data: list.results as TData[], total: list.count };
       }

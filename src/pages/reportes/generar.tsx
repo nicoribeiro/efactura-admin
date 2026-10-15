@@ -2,6 +2,7 @@ import { Alert, Button, Modal, Space, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { apiJson } from "../../api/http";
+import { ordenar } from "../../utils/orden";
 import { tagEstadoReporte } from "./estado";
 
 /** El proceso automatico reporta con este atraso a proposito (ReporteDiarioPoller, de hace 30 a hace 11 dias) */
@@ -45,6 +46,22 @@ const mostrarResultado = (r: Resultado) => {
       );
     case "error":
       return <Typography.Text type="danger">{r.mensaje}</Typography.Text>;
+  }
+};
+
+/** Resultado como texto, para ordenar por esa columna (generado: por el estado del reporte) */
+const textoResultado = (r: Resultado) => {
+  switch (r.tipo) {
+    case "pendiente":
+      return "Pendiente";
+    case "generando":
+      return "Generando";
+    case "yaAceptado":
+      return "Ya estaba aceptado";
+    case "generado":
+      return r.estado ?? null;
+    case "error":
+      return r.mensaje;
   }
 };
 
@@ -173,10 +190,14 @@ export function GenerarReportes({
         >
           <Table.Column<{ fecha: string }>
             title="Día"
+            sorter={ordenar<{ fecha: string }>(({ fecha }) => fecha)}
             render={(_, { fecha }) => dayjs(fecha).format("DD/MM/YYYY ddd")}
           />
           <Table.Column<{ fecha: string }>
             title="Resultado"
+            sorter={ordenar<{ fecha: string }>(({ fecha }) =>
+              textoResultado(resultados[fecha] ?? { tipo: "pendiente" }),
+            )}
             render={(_, { fecha }) =>
               mostrarResultado(resultados[fecha] ?? { tipo: "pendiente" })
             }

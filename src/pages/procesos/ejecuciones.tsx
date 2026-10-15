@@ -3,6 +3,7 @@ import { Alert, Button, Descriptions, Drawer, Table, Tag, Typography } from "ant
 import { useCallback, useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
+import { ordenar } from "../../utils/orden";
 
 /** Ejecucion registrada de un proceso (GET /procesos/:nombre/ejecuciones) */
 interface Ejecucion {
@@ -83,11 +84,13 @@ function Detalle({ detalle }: { detalle: string | null }) {
           {
             title: "Cambio",
             dataIndex: "tipo",
+            sorter: ordenar<CambioEmisor>((c) => c.tipo),
             render: (t: string) => <Tag color={COLOR_CAMBIO[t]}>{t}</Tag>,
           },
-          { title: "RUT", dataIndex: "rut" },
+          { title: "RUT", dataIndex: "rut", sorter: ordenar<CambioEmisor>((c) => c.rut) },
           {
             title: "Razón social",
+            sorter: ordenar<CambioEmisor>((c) => c.razon),
             render: (_, c) =>
               c.razonAntes && c.razonAntes !== c.razon ? (
                 <>
@@ -102,6 +105,7 @@ function Detalle({ detalle }: { detalle: string | null }) {
           },
           {
             title: "Mail de intercambio",
+            sorter: ordenar<CambioEmisor>((c) => c.mail),
             render: (_, c) =>
               c.mailAntes !== undefined && c.mailAntes !== c.mail ? (
                 <>
@@ -117,6 +121,7 @@ function Detalle({ detalle }: { detalle: string | null }) {
           {
             title: "Fin en DGI",
             dataIndex: "fechaFinDgi",
+            sorter: ordenar<CambioEmisor>((c) => c.fechaFinDgi),
             render: (f?: string | null) => f ?? "-",
           },
         ]}
@@ -129,6 +134,8 @@ function Detalle({ detalle }: { detalle: string | null }) {
 export function EjecucionesProceso({ nombre, titulo }: { nombre: string; titulo: string }) {
   const [abierto, setAbierto] = useState(false);
   const [pagina, setPagina] = useState(1);
+  // Orden en la API (?orden=campo&sentido=asc|desc); sin orden, de la mas nueva a la mas vieja
+  const [orden, setOrden] = useState<{ campo: string; sentido: "asc" | "desc" }>();
   const [datos, setDatos] = useState<{ results: Ejecucion[]; count: number }>();
   const [error, setError] = useState<string>();
   const [cargando, setCargando] = useState(false);
@@ -137,12 +144,17 @@ export function EjecucionesProceso({ nombre, titulo }: { nombre: string; titulo:
     (page: number) => {
       setCargando(true);
       setError(undefined);
-      apiJson<{ results: Ejecucion[]; count: number }>("GET", `/procesos/${nombre}/ejecuciones`, { page, pageSize: 20 })
+      apiJson<{ results: Ejecucion[]; count: number }>("GET", `/procesos/${nombre}/ejecuciones`, {
+        page,
+        pageSize: 20,
+        orden: orden?.campo,
+        sentido: orden?.sentido,
+      })
         .then(setDatos)
         .catch((e: { message?: string }) => setError(e?.message ?? "Error"))
         .finally(() => setCargando(false));
     },
-    [nombre],
+    [nombre, orden],
   );
 
   useEffect(() => {
@@ -167,20 +179,29 @@ export function EjecucionesProceso({ nombre, titulo }: { nombre: string; titulo:
             current: pagina,
             pageSize: 20,
             total: datos?.count ?? 0,
-            onChange: setPagina,
             showSizeChanger: false,
+          }}
+          onChange={(paginacion, _, sorter) => {
+            const s = Array.isArray(sorter) ? sorter[0] : sorter;
+            const nuevo = s?.order && s.field ? { campo: String(s.field), sentido: s.order === "ascend" ? "asc" : "desc" } as const : undefined;
+            if (nuevo?.campo !== orden?.campo || nuevo?.sentido !== orden?.sentido) {
+              // Otro orden: desde la primera pagina
+              setOrden(nuevo);
+              setPagina(1);
+            } else setPagina(paginacion.current ?? 1);
           }}
           expandable={{ expandedRowRender: (e) => <Detalle detalle={e.detalle} />, rowExpandable: (e) => !!e.detalle }}
           columns={[
-            { title: "Inicio", dataIndex: "inicio", render: (v: string | null) => formatFechaApi(v) || "-" },
+            { title: "Inicio", dataIndex: "inicio", sorter: true, render: (v: string | null) => formatFechaApi(v) || "-" },
             { title: "Duración", dataIndex: "duracionMs", render: duracion },
             {
               title: "Resultado",
               dataIndex: "ok",
+              sorter: true,
               render: (ok: boolean) => <Tag color={ok ? "green" : "red"}>{ok ? "OK" : "Error"}</Tag>,
             },
-            { title: "Origen", dataIndex: "origen", render: (v: string | null) => v ?? "-" },
-            { title: "Resumen", dataIndex: "resumen", render: (v: string | null) => v ?? "-" },
+            { title: "Origen", dataIndex: "origen", sorter: true, render: (v: string | null) => v ?? "-" },
+            { title: "Resumen", dataIndex: "resumen", sorter: true, render: (v: string | null) => v ?? "-" },
           ]}
         />
       </Drawer>

@@ -17,6 +17,7 @@ import { XmlCode } from "../../components/XmlCode";
 import { useEmpresa } from "../../contexts/empresa";
 import { rolUsuario } from "../../providers/authProvider";
 import { mismoRango, rangoPorDefecto, rangosRapidos } from "../../utils/rangos";
+import { ordenar } from "../../utils/orden";
 import { parsearReporte } from "../../utils/reporte";
 import { ReporteDetalle } from "./detalle";
 import { tagEstadoReporte } from "./estado";
@@ -253,29 +254,40 @@ export function ReporteDiarioList() {
         <Table.Column<Fila>
           title="Fecha"
           dataIndex="fecha"
+          sorter={ordenar<Fila>((fila) => fila.fecha)}
           render={(fecha: string) => dayjs(fecha).format("DD/MM/YYYY ddd")}
         />
         <Table.Column<Fila>
           title="Secuencial"
+          sorter={ordenar<Fila>((fila) => fila.reporte?.secuencial)}
           render={(_, fila) => fila.reporte?.secuencial ?? "-"}
         />
         <Table.Column<Fila>
           title="Comprobantes"
           align="right"
+          sorter={ordenar<Fila>((fila) => {
+            const n = fila.reporte ? Number(cantidadComprobantes(fila.reporte)) : NaN;
+            return Number.isNaN(n) ? null : n;
+          })}
           render={(_, fila) =>
             fila.reporte ? cantidadComprobantes(fila.reporte) : "-"
           }
         />
         <Table.Column<Fila>
           title="Enviado"
+          sorter={ordenar<Fila>((fila) => fila.reporte?.timestampEnviado)}
           render={(_, fila) => fila.reporte?.timestampEnviado || "-"}
         />
         <Table.Column<Fila>
           title="Id DGI"
+          sorter={ordenar<Fila>((fila) => fila.reporte?.idReceptor)}
           render={(_, fila) => fila.reporte?.idReceptor || "-"}
         />
         <Table.Column<Fila>
           title="Estado"
+          sorter={ordenar<Fila>((fila) =>
+            fila.reporte ? fila.reporte.estado || "Sin respuesta" : null,
+          )}
           render={(_, fila) =>
             fila.reporte ? (
               tagEstadoReporte(fila.reporte.estado)

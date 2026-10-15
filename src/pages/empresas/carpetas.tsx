@@ -3,6 +3,7 @@ import { Alert, Button, Collapse, Table, Tag, Tooltip, Typography } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
+import { ordenar } from "../../utils/orden";
 
 interface CarpetaImap {
   folderName: string;
@@ -21,13 +22,19 @@ const HORAS_ATRASADA = 24;
 /** Se toma la fecha sin la zona (servidor y usuarios en Uruguay) */
 const fecha = (valor?: string | null) => (valor ? dayjs(valor.slice(0, 19)) : undefined);
 
-function estado(carpeta: CarpetaImap) {
+/** Estado de la carpeta: texto y color */
+function estadoCarpeta(carpeta: CarpetaImap): { label: string; color?: string } {
   const ultima = fecha(carpeta.ultimaSincronizacion);
-  if (!ultima) return <Tag>Sin datos</Tag>;
+  if (!ultima) return { label: "Sin datos" };
   const minutos = dayjs().diff(ultima, "minute");
-  if (minutos <= MINUTOS_AL_DIA) return <Tag color="green">Al día</Tag>;
-  if (minutos <= HORAS_ATRASADA * 60) return <Tag color="orange">Atrasada</Tag>;
-  return <Tag color="red">Sin sincronizar</Tag>;
+  if (minutos <= MINUTOS_AL_DIA) return { label: "Al día", color: "green" };
+  if (minutos <= HORAS_ATRASADA * 60) return { label: "Atrasada", color: "orange" };
+  return { label: "Sin sincronizar", color: "red" };
+}
+
+function estado(carpeta: CarpetaImap) {
+  const { label, color } = estadoCarpeta(carpeta);
+  return <Tag color={color}>{label}</Tag>;
 }
 
 function hace(valor?: string | null) {
@@ -112,11 +119,21 @@ export function CarpetasImap({ rut }: { rut: string }) {
           pagination={false}
           locale={{ emptyText: "Todavía no se sincronizó ninguna carpeta" }}
         >
-          <Table.Column<CarpetaImap> title="Carpeta" dataIndex="folderName" />
-          <Table.Column<CarpetaImap> title="Último UID procesado" dataIndex="lastUid" align="right" />
+          <Table.Column<CarpetaImap>
+            title="Carpeta"
+            dataIndex="folderName"
+            sorter={ordenar<CarpetaImap>((c) => c.folderName)}
+          />
+          <Table.Column<CarpetaImap>
+            title="Último UID procesado"
+            dataIndex="lastUid"
+            align="right"
+            sorter={ordenar<CarpetaImap>((c) => c.lastUid)}
+          />
           <Table.Column<CarpetaImap>
             title="Última sincronización"
             dataIndex="ultimaSincronizacion"
+            sorter={ordenar<CarpetaImap>((c) => c.ultimaSincronizacion)}
             render={(valor?: string | null) =>
               valor ? (
                 <Tooltip title={valor}>
@@ -127,7 +144,11 @@ export function CarpetasImap({ rut }: { rut: string }) {
               )
             }
           />
-          <Table.Column<CarpetaImap> title="Estado" render={(_, carpeta) => estado(carpeta)} />
+          <Table.Column<CarpetaImap>
+            title="Estado"
+            render={(_, carpeta) => estado(carpeta)}
+            sorter={ordenar<CarpetaImap>((c) => estadoCarpeta(c).label)}
+          />
         </Table>
         <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0, fontSize: 12 }}>
           <Button size="small" icon={<ReloadOutlined />} loading={loading} onClick={() => setRecarga((n) => n + 1)} style={{ marginRight: 8 }}>

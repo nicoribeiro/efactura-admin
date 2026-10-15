@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import { theme } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTema } from "../../contexts/tema";
+import { ordenar } from "../../utils/orden";
 
 export interface PuntoDia {
   fecha: string; // yyyy-MM-dd
@@ -311,17 +312,20 @@ export function GraficoPorDia({
                 <Table.Column<PuntoDia>
                   title="Fecha"
                   dataIndex="fecha"
+                  sorter={ordenar<PuntoDia>((d) => d.fecha)}
                   render={(f: string) => dayjs(f).format("ddd DD/MM/YYYY")}
                 />
                 <Table.Column<PuntoDia>
                   title="Emitidos"
                   dataIndex="emitidos"
                   align="right"
+                  sorter={ordenar<PuntoDia>((d) => d.emitidos)}
                 />
                 <Table.Column<PuntoDia>
                   title="Recibidos"
                   dataIndex="recibidos"
                   align="right"
+                  sorter={ordenar<PuntoDia>((d) => d.recibidos)}
                 />
               </Table>
             ),

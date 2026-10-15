@@ -4,6 +4,7 @@ import { Alert, App, Button, Form, Input, InputNumber, Modal, Popconfirm, Space,
 import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
 import { rolUsuario } from "../../providers/authProvider";
+import { ordenar } from "../../utils/orden";
 
 /** Formato de SucursalSerializer (claves con mayúscula como en el JSON de entrada de la API) */
 interface Sucursal {
@@ -149,12 +150,12 @@ export function SucursalesTable({ rut }: { rut: string }) {
         </Button>
       )}
       <Table<Sucursal> dataSource={sucursales} loading={query.isLoading} rowKey="id" size="middle" pagination={false}>
-        <Table.Column<Sucursal> title="Código DGI" dataIndex="CdgDGISucur" />
-        <Table.Column<Sucursal> title="Domicilio fiscal" dataIndex="DomFiscal" />
-        <Table.Column<Sucursal> title="Ciudad" dataIndex="Ciudad" />
-        <Table.Column<Sucursal> title="Departamento" dataIndex="Departamento" />
-        <Table.Column<Sucursal> title="Código postal" dataIndex="CodigoPostal" />
-        <Table.Column<Sucursal> title="Teléfono" dataIndex="Telefono" />
+        <Table.Column<Sucursal> title="Código DGI" dataIndex="CdgDGISucur" sorter={ordenar<Sucursal>((s) => s.CdgDGISucur)} />
+        <Table.Column<Sucursal> title="Domicilio fiscal" dataIndex="DomFiscal" sorter={ordenar<Sucursal>((s) => s.DomFiscal)} />
+        <Table.Column<Sucursal> title="Ciudad" dataIndex="Ciudad" sorter={ordenar<Sucursal>((s) => s.Ciudad)} />
+        <Table.Column<Sucursal> title="Departamento" dataIndex="Departamento" sorter={ordenar<Sucursal>((s) => s.Departamento)} />
+        <Table.Column<Sucursal> title="Código postal" dataIndex="CodigoPostal" sorter={ordenar<Sucursal>((s) => s.CodigoPostal)} />
+        <Table.Column<Sucursal> title="Teléfono" dataIndex="Telefono" sorter={ordenar<Sucursal>((s) => s.Telefono)} />
         {esAdmin && (
           <Table.Column<Sucursal>
             title=""

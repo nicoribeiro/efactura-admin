@@ -6,6 +6,7 @@ import { ESTADOS_CFE, estadoDgiMostrado, formatFechaDia } from "../../constants/
 import { useEmpresa } from "../../contexts/empresa";
 import { urlDocumento } from "../../utils/busqueda";
 import { estadosCfeEnSobre, rechazoDelSobre } from "../../utils/dgi";
+import { ordenar } from "../../utils/orden";
 import { etiquetaEmpresa } from "../documentos/list";
 import { RechazoDgiAlert } from "../documentos/rechazo";
 import { SobreDocumentoInfo } from "../documentos/sobre";
@@ -58,6 +59,25 @@ export function SobreShow() {
       (d) =>
         d.idTipoDoc === c.idTipoDoc && d.serie === c.serie && d.nro === c.nro,
     );
+  // Sobre rechazado: DGI no proceso ninguno de sus comprobantes
+  const estadoCfe = (c: ComprobanteResumen) =>
+    rechazo
+      ? "BE"
+      : estadoDgiMostrado(estadoEnSobre(c)?.estado ?? c.estado, sobre?.estadoDgi);
+  const textoEstado = (c: ComprobanteResumen) => {
+    const estado = estadoCfe(c);
+    return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : "Sin respuesta";
+  };
+  const contraparte = (c: ComprobanteResumen) =>
+    emitido
+      ? (etiquetaEmpresa(c.empresaReceptora) ?? c.titular)
+      : etiquetaEmpresa(c.empresaEmisora);
+  const textoMotivos = (c: ComprobanteResumen) =>
+    rechazo
+      ? "Sobre rechazado"
+      : (estadoEnSobre(c)?.motivos ?? [])
+          .map((m) => `${m.codigo}${m.glosa ? ` ${m.glosa}` : ""}`)
+          .join(" ") || null;
 
   return (
     <Show
@@ -137,6 +157,7 @@ export function SobreShow() {
             >
               <Table.Column<ComprobanteResumen>
                 title="Comprobante"
+                sorter={ordenar<ComprobanteResumen>(etiquetaComprobante)}
                 render={(_, c) => {
                   const url = urlDocumento(c, sobre.direccion);
                   return url ? (
@@ -148,28 +169,25 @@ export function SobreShow() {
               />
               <Table.Column<ComprobanteResumen>
                 title="Fecha"
+                sorter={ordenar<ComprobanteResumen>((c) => c.fechaEmision)}
                 render={(_, c) => formatFechaDia(c.fechaEmision)}
               />
               <Table.Column<ComprobanteResumen>
                 title={emitido ? "Receptor" : "Emisor"}
-                render={(_, c) =>
-                  (emitido
-                    ? (etiquetaEmpresa(c.empresaReceptora) ?? c.titular)
-                    : etiquetaEmpresa(c.empresaEmisora)) ?? "-"
-                }
+                sorter={ordenar<ComprobanteResumen>(contraparte)}
+                render={(_, c) => contraparte(c) ?? "-"}
               />
               <Table.Column<ComprobanteResumen>
                 title="Total"
                 align="right"
+                sorter={ordenar<ComprobanteResumen>((c) => c.totMntTotal)}
                 render={(_, c) => `${c.moneda ?? ""} ${monto(c.totMntTotal)}`}
               />
               <Table.Column<ComprobanteResumen>
                 title="Estado DGI"
+                sorter={ordenar<ComprobanteResumen>(textoEstado)}
                 render={(_, c) => {
-                  // Sobre rechazado: DGI no proceso ninguno de sus comprobantes
-                  const estado = rechazo
-                    ? "BE"
-                    : estadoDgiMostrado(estadoEnSobre(c)?.estado ?? c.estado, sobre.estadoDgi);
+                  const estado = estadoCfe(c);
                   if (!estado) return <Tag>Sin respuesta</Tag>;
                   return (
                     <Tag color={ESTADOS_CFE[estado]?.color}>
@@ -180,6 +198,7 @@ export function SobreShow() {
               />
               <Table.Column<ComprobanteResumen>
                 title="Motivo"
+                sorter={ordenar<ComprobanteResumen>(textoMotivos)}
                 render={(_, c) => {
                   if (rechazo)
                     return (

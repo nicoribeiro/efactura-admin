@@ -23,6 +23,7 @@ import {
   type CAE,
   type EstadoCAE,
 } from "../../utils/cae";
+import { ordenar } from "../../utils/orden";
 import { PronosticoCaeTable } from "./pronosticoCae";
 import { CargarCae } from "./cargarCae";
 import { rolUsuario } from "../../providers/authProvider";
@@ -209,20 +210,35 @@ export function CaeTable({ rut }: { rut: string }) {
         <Table.Column<CAE>
           title="Tipo"
           dataIndex="tipo"
+          sorter={ordenar<CAE>((cae) => tipoDocByName(cae.tipo)?.id ?? cae.tipo)}
           render={(tipo?: string) => {
             const t = tipoDocByName(tipo);
             return t ? `${t.id} - ${t.label}` : (tipo ?? "-");
           }}
         />
-        <Table.Column<CAE> title="Nro. CAE" dataIndex="nro" />
-        <Table.Column<CAE> title="Serie" dataIndex="serie" />
+        <Table.Column<CAE>
+          title="Nro. CAE"
+          dataIndex="nro"
+          sorter={ordenar<CAE>((cae) => cae.nro)}
+        />
+        <Table.Column<CAE>
+          title="Serie"
+          dataIndex="serie"
+          sorter={ordenar<CAE>((cae) => cae.serie)}
+        />
         <Table.Column<CAE>
           title="Rango"
+          sorter={ordenar<CAE>((cae) => cae.inicial)}
           render={(_, cae) => `${cae.inicial} - ${cae.fin}`}
         />
-        <Table.Column<CAE> title="Siguiente" dataIndex="siguiente" />
+        <Table.Column<CAE>
+          title="Siguiente"
+          dataIndex="siguiente"
+          sorter={ordenar<CAE>((cae) => cae.siguiente)}
+        />
         <Table.Column<CAE>
           title="Uso"
+          sorter={ordenar<CAE>((cae) => cae.porcentajeUso)}
           width={220}
           render={(_, cae) => (
             <Tooltip
@@ -240,9 +256,11 @@ export function CaeTable({ rut }: { rut: string }) {
           title="Vencimiento"
           dataIndex="fechaVencimiento"
           render={formatFechaDia}
+          sorter={ordenar<CAE>((cae) => cae.fechaVencimiento)}
         />
         <Table.Column<CAE>
           title="Estado"
+          sorter={ordenar<CAE>((cae) => estadoCAE(cae).label)}
           render={(_, cae) => {
             const estado = estadoCAE(cae);
             return <Tag color={estado.color}>{estado.label}</Tag>;

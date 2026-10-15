@@ -10,7 +10,7 @@ const xml = (contenido?: string | null) => <XmlCode xml={contenido ?? ""} />;
 
 /**
  * Sobre en el que viajo el comprobante (solo lectura); los datos los carga el detalle con useSobreDocumento.
- * Con enlazar (por defecto) muestra un link a la pagina del sobre.
+ * Con enlazar (por defecto) el id del sobre es un link a su pagina.
  */
 export function SobreDocumentoInfo({
   estado,
@@ -78,18 +78,14 @@ export function SobreDocumentoInfo({
     <>
       <Descriptions bordered size="small" column={2}>
         <Descriptions.Item label="Id del sobre" span={2}>
-          <Typography.Text copyable>{String(sobre.id)}</Typography.Text>
+          {enlazar ? (
+            <Link to={`/sobres/show/${sobre.id}`}>{sobre.id}</Link>
+          ) : (
+            <Typography.Text>{sobre.id}</Typography.Text>
+          )}
         </Descriptions.Item>
         <Descriptions.Item label="Archivo" span={2}>
           {sobre.nombreArchivo ?? "-"}
-          {enlazar && (
-            <>
-              {" · "}
-              <Link to={`/sobres/show/${sobre.id}`}>
-                Ver sobre y sus comprobantes
-              </Link>
-            </>
-          )}
         </Descriptions.Item>
         <Descriptions.Item label="Fecha">
           {formatFechaDia(sobre.fecha) || "-"}

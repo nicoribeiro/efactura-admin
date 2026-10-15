@@ -28,6 +28,13 @@ import { SobreDocumentoInfo } from "./sobre";
 import { RechazoComercial, RespuestaCfeEstado } from "./respuestaCfe";
 import { EmpresaConRutDgi } from "../../components/RutDgi";
 import { useSobreDocumento } from "./useSobre";
+import { ordenar } from "../../utils/orden";
+
+type Linea = Record<string, unknown>;
+
+/** Valores de las lineas del detalle para ordenar (vienen sin tipo de la API) */
+const numeroLinea = (v: unknown) => (v == null || v === "" ? null : Number(v));
+const textoLinea = (v: unknown) => (v == null ? null : String(v));
 
 interface DocumentoDetalle extends DocumentoConReferencia {
   fechaGeneracion?: string;
@@ -274,26 +281,45 @@ export function DocumentoShow() {
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             Detalle
           </Typography.Title>
-          <Table
+          <Table<Linea>
             dataSource={detalle}
             rowKey={(_, index) => String(index)}
             size="small"
             pagination={false}
           >
-            <Table.Column title="#" dataIndex="nroLinea" />
-            <Table.Column title="Ítem" dataIndex="nombreItem" />
-            <Table.Column title="Cantidad" dataIndex="cantidad" align="right" />
-            <Table.Column title="Unidad" dataIndex="unidadMedida" />
-            <Table.Column
+            <Table.Column<Linea>
+              title="#"
+              dataIndex="nroLinea"
+              sorter={ordenar<Linea>((d) => numeroLinea(d.nroLinea))}
+            />
+            <Table.Column<Linea>
+              title="Ítem"
+              dataIndex="nombreItem"
+              sorter={ordenar<Linea>((d) => textoLinea(d.nombreItem))}
+            />
+            <Table.Column<Linea>
+              title="Cantidad"
+              dataIndex="cantidad"
+              align="right"
+              sorter={ordenar<Linea>((d) => numeroLinea(d.cantidad))}
+            />
+            <Table.Column<Linea>
+              title="Unidad"
+              dataIndex="unidadMedida"
+              sorter={ordenar<Linea>((d) => textoLinea(d.unidadMedida))}
+            />
+            <Table.Column<Linea>
               title="Precio unitario"
               dataIndex="precioUnitario"
               align="right"
+              sorter={ordenar<Linea>((d) => numeroLinea(d.precioUnitario))}
               render={monto}
             />
             {conDescuento && (
               <Table.Column<Record<string, unknown>>
                 title="Descuento"
                 align="right"
+                sorter={ordenar<Linea>((d) => Number(d.descuentoMonto) || null)}
                 render={(_, d) =>
                   Number(d.descuentoMonto)
                     ? `${monto(Number(d.descuentoMonto))}${Number(d.descuentoPct) ? ` (${Number(d.descuentoPct)}%)` : ""}`
@@ -305,6 +331,7 @@ export function DocumentoShow() {
               <Table.Column<Record<string, unknown>>
                 title="Recargo"
                 align="right"
+                sorter={ordenar<Linea>((d) => Number(d.recargoMonto) || null)}
                 render={(_, d) =>
                   Number(d.recargoMonto)
                     ? `${monto(Number(d.recargoMonto))}${Number(d.recargoPct) ? ` (${Number(d.recargoPct)}%)` : ""}`
@@ -312,10 +339,11 @@ export function DocumentoShow() {
                 }
               />
             )}
-            <Table.Column
+            <Table.Column<Linea>
               title="Monto"
               dataIndex="montoItem"
               align="right"
+              sorter={ordenar<Linea>((d) => numeroLinea(d.montoItem))}
               render={monto}
             />
           </Table>

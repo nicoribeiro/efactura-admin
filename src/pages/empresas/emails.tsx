@@ -28,6 +28,7 @@ import { formatFechaApi } from "../../constants/cfe";
 import { descargarBlob } from "../../utils/csv";
 import { CarpetasImap } from "./carpetas";
 import { ReintentarEmail, ReintentarTodos } from "./reintentarEmails";
+import { ordenar } from "../../utils/orden";
 
 type EstadoAdjunto =
   "PROCESADO_OK" | "PROCESADO_ERROR" | "PENDIENTE" | "OMITIDO";
@@ -147,6 +148,10 @@ function DescargarAdjunto({
 
 /** Emails recibidos por una empresa; se pueden reintentar los que tienen adjuntos con error o pendientes */
 export function EmailsTable({ rut }: { rut: string }) {
+  // Emails abiertos (con sus adjuntos a la vista): con la flecha o haciendo clic en el id
+  const [abiertos, setAbiertos] = useState<number[]>([]);
+  const alternar = (id: number) =>
+    setAbiertos((actuales) => (actuales.includes(id) ? actuales.filter((a) => a !== id) : [...actuales, id]));
   // ?estado=PROCESADO_ERROR (link de "Atención" en el tablero)
   const [params] = useSearchParams();
   const estadoInicial = params.get("estado") as EstadoAdjunto | null;
@@ -255,8 +260,10 @@ export function EmailsTable({ rut }: { rut: string }) {
         // Ancho fijo por columna: remitente y asunto se recortan con "…" para que estado y acciones queden a la vista;
         // en pantallas angostas la tabla se desplaza horizontalmente
         tableLayout="fixed"
-        scroll={{ x: 760 }}
+        scroll={{ x: 850 }}
         expandable={{
+          expandedRowKeys: abiertos,
+          onExpand: (_, email) => alternar(email.id),
           rowExpandable: (email) => email.attachments.length > 0,
           expandedRowRender: (email) => (
             <Table<Adjunto>
@@ -303,16 +310,19 @@ export function EmailsTable({ rut }: { rut: string }) {
               <Table.Column<Adjunto>
                 title="Adjunto"
                 dataIndex="name"
+                sorter={ordenar<Adjunto>((a) => a.name)}
                 render={(name) => name ?? "(sin nombre)"}
               />
               <Table.Column<Adjunto>
                 title="Estado"
                 dataIndex="estado"
+                sorter={ordenar<Adjunto>((a) => (a.estado ? ESTADOS_ADJUNTO[a.estado]?.label ?? a.estado : null))}
                 render={tagEstado}
               />
               <Table.Column<Adjunto>
                 title="Error"
                 dataIndex="error"
+                sorter={ordenar<Adjunto>((a) => a.error)}
                 render={(error?: string | null) =>
                   error ? (
                     <Typography.Text type="danger">{error}</Typography.Text>
@@ -337,19 +347,35 @@ export function EmailsTable({ rut }: { rut: string }) {
         }}
       >
         <Table.Column<EmailRecibido>
+          title="Id"
+          dataIndex="id"
+          width={90}
+          sorter
+          render={(_, email) =>
+            email.attachments.length > 0 ? (
+              <Typography.Link onClick={() => alternar(email.id)}>{email.id}</Typography.Link>
+            ) : (
+              <Typography.Text type="secondary">{email.id}</Typography.Text>
+            )
+          }
+        />
+        <Table.Column<EmailRecibido>
           title="Fecha"
           dataIndex="sentDate"
+          sorter
           width={170}
           render={formatFechaApi}
         />
         <Table.Column<EmailRecibido>
           title="Remitente"
           dataIndex="from"
+          sorter
           ellipsis={{ showTitle: true }}
         />
         <Table.Column<EmailRecibido>
           title="Asunto"
           dataIndex="subject"
+          sorter
           ellipsis={{ showTitle: true }}
         />
         <Table.Column<EmailRecibido>

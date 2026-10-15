@@ -46,6 +46,7 @@ import { PronosticoCaeTable } from "../empresas/pronosticoCae";
 import { INFO as INFO_PROCESOS } from "../procesos/info";
 import { GraficoPorDia, type PuntoDia } from "./grafico";
 import { RechazadosCard } from "./rechazados";
+import { ordenar } from "../../utils/orden";
 
 interface FilaEmitidos {
   tipo: string;
@@ -84,6 +85,11 @@ interface FilaTipoEmitidos {
   USD: number;
   otras: number;
 }
+
+type FilaTipoRecibidos = Pick<
+  FilaTipoEmitidos,
+  "idTipoDoc" | "tipo" | "cantidad" | "UYU" | "USD" | "otras"
+>;
 
 interface Carpeta {
   folderName: string;
@@ -884,7 +890,7 @@ export function Inicio() {
         <Col xs={24} xl={14}>
           <Card size="small" title="Emitidos por tipo">
             {errorSeccion("resumen") ?? (
-              <Table
+              <Table<FilaTipoEmitidos>
                 dataSource={filasEmitidos}
                 rowKey="idTipoDoc"
                 size="small"
@@ -892,41 +898,55 @@ export function Inicio() {
                 loading={loading}
                 scroll={{ x: true }}
               >
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
                   title="Tipo"
-                  render={(_, f: { idTipoDoc: number; tipo: string }) =>
-                    etiquetaTipo(f.idTipoDoc, f.tipo)
-                  }
+                  sorter={ordenar<FilaTipoEmitidos>((f) => etiquetaTipo(f.idTipoDoc, f.tipo))}
+                  render={(_, f) => etiquetaTipo(f.idTipoDoc, f.tipo)}
                 />
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
                   title="Cantidad"
                   dataIndex="cantidad"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.cantidad)}
                   align="right"
                 />
-                <Table.Column title="Aceptados" dataIndex="AE" align="right" />
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
+                  title="Aceptados"
+                  dataIndex="AE"
+                  align="right"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.AE)}
+                />
+                <Table.Column<FilaTipoEmitidos>
                   title="Rechazados"
                   dataIndex="BE"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.BE)}
                   align="right"
                   render={(n: number) =>
                     n ? <Typography.Text type="danger">{n}</Typography.Text> : 0
                   }
                 />
-                <Table.Column title="Observados" dataIndex="CE" align="right" />
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
+                  title="Observados"
+                  dataIndex="CE"
+                  align="right"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.CE)}
+                />
+                <Table.Column<FilaTipoEmitidos>
                   title="Sin respuesta"
                   dataIndex="sin"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.sin)}
                   align="right"
                 />
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
                   title="Total UYU"
                   dataIndex="UYU"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.UYU)}
                   align="right"
                   render={monto}
                 />
-                <Table.Column
+                <Table.Column<FilaTipoEmitidos>
                   title="Total USD"
                   dataIndex="USD"
+                  sorter={ordenar<FilaTipoEmitidos>((f) => f.USD)}
                   align="right"
                   render={monto}
                 />
@@ -938,7 +958,7 @@ export function Inicio() {
         <Col xs={24} xl={10}>
           <Card size="small" title="Recibidos por tipo">
             {errorSeccion("resumen") ?? (
-              <Table
+              <Table<FilaTipoRecibidos>
                 dataSource={filasRecibidos}
                 rowKey="idTipoDoc"
                 size="small"
@@ -946,26 +966,28 @@ export function Inicio() {
                 loading={loading}
                 scroll={{ x: true }}
               >
-                <Table.Column
+                <Table.Column<FilaTipoRecibidos>
                   title="Tipo"
-                  render={(_, f: { idTipoDoc: number; tipo: string }) =>
-                    etiquetaTipo(f.idTipoDoc, f.tipo)
-                  }
+                  sorter={ordenar<FilaTipoRecibidos>((f) => etiquetaTipo(f.idTipoDoc, f.tipo))}
+                  render={(_, f) => etiquetaTipo(f.idTipoDoc, f.tipo)}
                 />
-                <Table.Column
+                <Table.Column<FilaTipoRecibidos>
                   title="Cantidad"
                   dataIndex="cantidad"
+                  sorter={ordenar<FilaTipoRecibidos>((f) => f.cantidad)}
                   align="right"
                 />
-                <Table.Column
+                <Table.Column<FilaTipoRecibidos>
                   title="Total UYU"
                   dataIndex="UYU"
+                  sorter={ordenar<FilaTipoRecibidos>((f) => f.UYU)}
                   align="right"
                   render={monto}
                 />
-                <Table.Column
+                <Table.Column<FilaTipoRecibidos>
                   title="Total USD"
                   dataIndex="USD"
+                  sorter={ordenar<FilaTipoRecibidos>((f) => f.USD)}
                   align="right"
                   render={monto}
                 />

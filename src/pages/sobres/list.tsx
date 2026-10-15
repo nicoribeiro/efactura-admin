@@ -461,19 +461,22 @@ export function SobreList() {
         <Table.Column<SobreResumen>
           title="Id"
           dataIndex="id"
-          render={(id: number) => (
-            <Typography.Text type="secondary" copyable={{ text: String(id) }}>
-              {id}
-            </Typography.Text>
+          sorter
+          render={(_, s) => (
+            <Typography.Link onClick={() => ver(s)}>{s.id}</Typography.Link>
           )}
         />
         <Table.Column<SobreResumen>
           title="Fecha"
           dataIndex="fecha"
+          sorter
           render={formatFechaDia}
         />
         <Table.Column<SobreResumen>
           title={emitidos ? "Receptor" : "Emisor"}
+          // Orden en la API por razon social de la contraparte; dataIndex solo da el nombre del orden
+          dataIndex="contraparte"
+          sorter
           render={(_, s) =>
             etiquetaEmpresa(emitidos ? s.empresaReceptora : s.empresaEmisora) ??
             (emitidos ? "DGI" : "-")
@@ -481,6 +484,9 @@ export function SobreList() {
         />
         <Table.Column<SobreResumen>
           title="Comprobantes"
+          // Orden en la API por el texto del primer comprobante (tipo, serie y numero)
+          dataIndex="comprobantes"
+          sorter
           render={(_, s) => (
             <LinksComprobantes
               comprobantes={s.comprobantes}
@@ -492,6 +498,8 @@ export function SobreList() {
           <>
             <Table.Column<SobreResumen>
               title="Estado DGI"
+              dataIndex="estadoDgi"
+              sorter
               render={(_, s) => (
                 <EstadoSobreDgi
                   estado={s.estadoDgi}
@@ -503,6 +511,7 @@ export function SobreList() {
             <Table.Column<SobreResumen>
               title="Respuesta desde"
               dataIndex="fechaConsulta"
+              sorter
               render={formatFechaApi}
             />
             <Table.Column<SobreResumen>
@@ -511,6 +520,8 @@ export function SobreList() {
                   M
                 </Tooltip>
               }
+              dataIndex="estadoEmpresa"
+              sorter
               render={(_, s) =>
                 s.enviadoAEmpresa === false ? (
                   <Tooltip title="El receptor no es emisor electrónico: no responde">
@@ -528,11 +539,14 @@ export function SobreList() {
               title={
                 <Tooltip title="Nuestra respuesta al sobre (M_)">M</Tooltip>
               }
+              dataIndex="estadoEmpresa"
+              sorter
               render={(_, s) => <EstadoSobreTag estado={s.estadoEmpresa} />}
             />
             <Table.Column<SobreResumen>
               title="Recibido"
               dataIndex="timestampRecibido"
+              sorter
               render={formatFechaApi}
             />
           </>
@@ -540,6 +554,7 @@ export function SobreList() {
         <Table.Column<SobreResumen>
           title="Archivo"
           dataIndex="nombreArchivo"
+          sorter
           render={(n?: string | null) => (
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {n ?? "-"}

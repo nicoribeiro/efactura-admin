@@ -2,6 +2,7 @@ import { Alert, Table, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
+import { ordenar } from "../../utils/orden";
 import type { DocumentoRef } from "./useSobre";
 
 interface EnvioMail {
@@ -90,15 +91,27 @@ export function EnviosMail({
         ),
       }}
     >
-      <Table.Column<EnvioMail> title="Fecha" dataIndex="fecha" render={formatFechaApi} />
+      <Table.Column<EnvioMail>
+        title="Fecha"
+        dataIndex="fecha"
+        render={formatFechaApi}
+        sorter={ordenar<EnvioMail>((e) => e.fecha)}
+      />
       <Table.Column<EnvioMail>
         title="Qué"
         dataIndex="tipo"
+        sorter={ordenar<EnvioMail>((e) => (e.tipo ? (TIPOS[e.tipo] ?? e.tipo) : null))}
         render={(t?: string | null) => (t ? (TIPOS[t] ?? t) : "-")}
       />
-      <Table.Column<EnvioMail> title="A" dataIndex="destinatarios" render={(d) => d ?? "-"} />
+      <Table.Column<EnvioMail>
+        title="A"
+        dataIndex="destinatarios"
+        render={(d) => d ?? "-"}
+        sorter={ordenar<EnvioMail>((e) => e.destinatarios)}
+      />
       <Table.Column<EnvioMail>
         title="Resultado"
+        sorter={ordenar<EnvioMail>((e) => e.ok)}
         render={(_, e) =>
           e.ok ? (
             <Tag color="green">Enviado</Tag>
@@ -109,7 +122,12 @@ export function EnviosMail({
           )
         }
       />
-      <Table.Column<EnvioMail> title="Origen" dataIndex="origen" render={(o) => o ?? "-"} />
+      <Table.Column<EnvioMail>
+        title="Origen"
+        dataIndex="origen"
+        render={(o) => o ?? "-"}
+        sorter={ordenar<EnvioMail>((e) => e.origen)}
+      />
     </Table>
   );
 }

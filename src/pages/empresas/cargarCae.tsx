@@ -17,6 +17,7 @@ import { apiJson } from "../../api/http";
 import { TIPOS_DOC } from "../../constants/cfe";
 import type { CAE } from "../../utils/cae";
 import { leerCaeXml, type CaeDgi } from "../../utils/caeXml";
+import { ordenar } from "../../utils/orden";
 
 interface Archivo {
   nombre: string;
@@ -24,6 +25,16 @@ interface Archivo {
   problemas: string[];
   resultado?: "cargado" | string;
 }
+
+/** Estado del archivo como se ve en la tabla (para ordenar por esa columna) */
+const estadoArchivo = (a: Archivo) =>
+  a.resultado === "cargado"
+    ? "Cargado"
+    : a.resultado
+      ? "Error al cargar"
+      : a.problemas.length > 0
+        ? a.problemas[0]
+        : "Listo para cargar";
 
 /** Problemas que impedirian cargar el CAE (la API vuelve a validar todo) */
 function problemas(
@@ -178,6 +189,7 @@ export function CargarCae({
           >
             <Table.Column<Archivo>
               title="Archivo"
+              sorter={ordenar<Archivo>((a) => a.nombre)}
               render={(_, a) => (
                 <Typography.Text
                   style={{ fontSize: 12 }}
@@ -189,6 +201,7 @@ export function CargarCae({
             />
             <Table.Column<Archivo>
               title="Tipo"
+              sorter={ordenar<Archivo>((a) => a.cae?.tcfe)}
               render={(_, a) =>
                 a.cae
                   ? `${a.cae.tcfe} - ${tipo(a.cae.tcfe)?.label ?? "?"}`
@@ -197,24 +210,29 @@ export function CargarCae({
             />
             <Table.Column<Archivo>
               title="Serie"
+              sorter={ordenar<Archivo>((a) => a.cae?.serie)}
               render={(_, a) => a.cae?.serie ?? "-"}
             />
             <Table.Column<Archivo>
               title="Rango"
+              sorter={ordenar<Archivo>((a) => a.cae?.dNro)}
               render={(_, a) => (a.cae ? `${a.cae.dNro} - ${a.cae.hNro}` : "-")}
             />
             <Table.Column<Archivo>
               title="Nro. CAE"
+              sorter={ordenar<Archivo>((a) => a.cae?.na)}
               render={(_, a) => a.cae?.na ?? "-"}
             />
             <Table.Column<Archivo>
               title="Vence"
+              sorter={ordenar<Archivo>((a) => a.cae?.fvd)}
               render={(_, a) =>
                 a.cae ? dayjs(a.cae.fvd).format("DD/MM/YYYY") : "-"
               }
             />
             <Table.Column<Archivo>
               title="Estado"
+              sorter={ordenar<Archivo>(estadoArchivo)}
               render={(_, a) =>
                 a.resultado === "cargado" ? (
                   <Tag color="green">Cargado</Tag>

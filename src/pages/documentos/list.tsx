@@ -281,19 +281,27 @@ export function DocumentoList() {
         <Table.Column<Documento>
           title="Tipo"
           dataIndex="tipo"
+          sorter
           render={(tipo: string) => tipoDocByName(tipo)?.label ?? tipo}
         />
         <Table.Column<Documento>
           title="Serie / Nro"
+          // Orden en la API (serie y numero); dataIndex solo da el nombre del orden
+          dataIndex="serieNro"
+          sorter
           render={(_, doc) => `${doc.serie}-${doc.nro}`}
         />
         <Table.Column<Documento>
           title="Fecha"
           dataIndex="fechaEmision"
+          sorter
           render={formatFechaDia}
         />
         <Table.Column<Documento>
           title={direccion === "EMITIDO" ? "Receptor" : "Emisor"}
+          // Orden en la API por razon social de la contraparte
+          dataIndex="contraparte"
+          sorter
           render={(_, doc) =>
             direccion === "EMITIDO"
               ? (etiquetaEmpresa(doc.empresaReceptora) ??
@@ -302,10 +310,11 @@ export function DocumentoList() {
               : (etiquetaEmpresa(doc.empresaEmisora) ?? "-")
           }
         />
-        <Table.Column<Documento> title="Moneda" dataIndex="moneda" />
+        <Table.Column<Documento> title="Moneda" dataIndex="moneda" sorter />
         <Table.Column<Documento>
           title="Total"
           dataIndex="totMntTotal"
+          sorter
           align="right"
           render={(value?: number) =>
             value != null
@@ -319,6 +328,7 @@ export function DocumentoList() {
         <Table.Column<Documento>
           title="Estado DGI"
           dataIndex="estado"
+          sorter
           render={(estado: string | null | undefined, doc) => {
             // En rechazados/observados, el motivo de DGI al pasar el mouse
             const tipo = tipoDocByName(doc.tipo);

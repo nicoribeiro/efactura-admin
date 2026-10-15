@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { apiJson } from "../../api/http";
 import { formatFechaApi } from "../../constants/cfe";
 import { navegador } from "../../utils/userAgent";
+import { ordenar } from "../../utils/orden";
 
 type Estado =
   "VIGENTE" | "VENCIDA_INACTIVIDAD" | "VENCIDA_DURACION" | "CERRADA";
@@ -78,6 +79,7 @@ export function SesionesUsuario({ uid }: { uid: number }) {
       >
         <Table.Column<Sesion>
           title="Estado"
+          sorter={ordenar<Sesion>((s) => ESTADOS[s.estado]?.label ?? s.estado)}
           render={(_, s) => (
             <Tooltip title={ESTADOS[s.estado]?.ayuda}>
               <Tag color={ESTADOS[s.estado]?.color}>
@@ -88,6 +90,7 @@ export function SesionesUsuario({ uid }: { uid: number }) {
         />
         <Table.Column<Sesion>
           title="Inicio (login)"
+          sorter={ordenar<Sesion>((s) => s.creada)}
           render={(_, s) => (
             <span style={{ whiteSpace: "nowrap" }}>
               {formatFechaApi(s.creada) || "-"}
@@ -96,6 +99,7 @@ export function SesionesUsuario({ uid }: { uid: number }) {
         />
         <Table.Column<Sesion>
           title="Último acceso"
+          sorter={ordenar<Sesion>((s) => s.ultimoAcceso)}
           render={(_, s) => (
             <span style={{ whiteSpace: "nowrap" }}>
               {s.ultimoAcceso ? (
@@ -111,10 +115,12 @@ export function SesionesUsuario({ uid }: { uid: number }) {
         <Table.Column<Sesion>
           title="IP"
           dataIndex="ip"
+          sorter={ordenar<Sesion>((s) => s.ip)}
           render={(ip?: string | null) => ip ?? "-"}
         />
         <Table.Column<Sesion>
           title="Navegador"
+          sorter={ordenar<Sesion>((s) => navegador(s.userAgent))}
           render={(_, s) => (
             <Tooltip title={s.userAgent}>
               <span>{navegador(s.userAgent)}</span>

@@ -45,10 +45,11 @@ export function EmpresaList() {
       </Card>
 
       <Table {...tableProps} rowKey="rut" size="middle" onRow={(empresa) => ({ onDoubleClick: () => ver(empresa) })}>
-        <Table.Column dataIndex="rut" title="RUT" />
+        <Table.Column dataIndex="rut" title="RUT" sorter />
         <Table.Column<Empresa>
           dataIndex="razon"
           title="Razón social"
+          sorter
           render={(razon: string, empresa) => (
             <>
               {razon}
@@ -60,21 +61,25 @@ export function EmpresaList() {
             </>
           )}
         />
-        <Table.Column dataIndex="nombreComercial" title="Nombre comercial" />
+        <Table.Column dataIndex="nombreComercial" title="Nombre comercial" sorter />
         <Table.Column
           dataIndex="emisorElectronico"
           title="Emisor electrónico"
+          sorter
           render={(value: boolean) => (value ? <Tag color="green">Sí</Tag> : <Tag>No</Tag>)}
         />
         <Table.Column<Empresa>
           title="Firma digital"
+          // Orden en la API por vencimiento de la firma; dataIndex solo da el nombre del orden
+          dataIndex="firma"
+          sorter
           render={(_, empresa) => {
             const estado = estadoFirma(empresa.firmaDigital);
             return <Tag color={estado.color}>{estado.label}</Tag>;
           }}
         />
-        <Table.Column dataIndex="mailRecepcion" title="Mail recepción" />
-        <Table.Column dataIndex="hostRecepcion" title="Servidor IMAP" />
+        <Table.Column dataIndex="mailRecepcion" title="Mail recepción" sorter />
+        <Table.Column dataIndex="hostRecepcion" title="Servidor IMAP" sorter />
         <Table.Column<Empresa>
           title=""
           render={(_, empresa) => <Button size="small" icon={<EyeOutlined />} onClick={() => ver(empresa)} />}
