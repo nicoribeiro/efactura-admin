@@ -36,6 +36,7 @@ import {
 import { STATUS_TIMEOUT } from "./api/http";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
+import { Logo } from "./components/Logo";
 import { EmpresaProvider } from "./contexts/empresa";
 import { TemaProvider } from "./contexts/TemaProvider";
 import { DocumentoList } from "./pages/documentos/list";
@@ -60,7 +61,7 @@ import { i18nProvider } from "./providers/i18nProvider";
 dayjs.locale("es");
 
 const Title = ({ collapsed }: { collapsed: boolean }) => (
-  <ThemedTitle collapsed={collapsed} text="efactura" />
+  <ThemedTitle collapsed={collapsed} text="efactura-admin" icon={<Logo />} />
 );
 
 export default function App() {
@@ -232,7 +233,13 @@ export default function App() {
                   element={
                     <AuthPage
                       type="login"
-                      title={<ThemedTitle collapsed={false} text="efactura" />}
+                      title={
+                        <ThemedTitle
+                          collapsed={false}
+                          text="efactura-admin"
+                          icon={<Logo />}
+                        />
+                      }
                       registerLink={false}
                       forgotPasswordLink={
                         <Link
@@ -250,7 +257,7 @@ export default function App() {
                 <Route path="/recuperar" element={<Recuperar />} />
               </Route>
             </Routes>
-            <DocumentTitleHandler handler={() => "efactura"} />
+            <DocumentTitleHandler handler={() => "efactura-admin"} />
           </Refine>
         </AntdApp>
       </TemaProvider>
