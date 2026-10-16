@@ -26,6 +26,7 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   define: {
     // Version mostrada en el pie del panel
+    __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync('package.json', 'utf8')).version),
     __APP_COMMIT__: JSON.stringify(process.env.VITE_COMMIT || commitActual() || 'desconocido'),
     __APP_BUILD__: JSON.stringify(command === 'build' ? new Date().toISOString() : null),
   },
