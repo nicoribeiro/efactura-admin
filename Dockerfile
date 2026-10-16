@@ -18,9 +18,9 @@ RUN npm run build
 # --- Runtime ---
 FROM docker.io/library/nginx:1.27-alpine
 
-# URL de la API de java_efactura_uy, sin barra final ni /api/v1 (se reemplaza en la config al iniciar)
-ENV API_UPSTREAM=http://192.168.1.103:9000
-
+# URL de la API de java_efactura_uy, sin barra final ni /api/v1 (se reemplaza en la config al iniciar). Obligatoria y sin
+# valor por defecto: se pasa al levantar el contenedor (-e API_UPSTREAM=... o el .env de docker compose)
+COPY docker/05-api-upstream.sh /docker-entrypoint.d/05-api-upstream.sh
 COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 

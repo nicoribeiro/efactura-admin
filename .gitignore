@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+# Configuracion del servidor (ej. API_UPSTREAM para docker compose)
+.env
 
 # Editor directories and files
 .vscode/*
