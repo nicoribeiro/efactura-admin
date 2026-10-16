@@ -123,3 +123,7 @@ envían mails o regeneran credenciales. La consulta a DGI del resultado de un co
 
 Para agregar una acción nueva hay que sumarla a esa lista; si no, el panel responde 405 sin llamar a la API. Las
 restricciones por rol (ADMIN) las aplica la API; el panel solo oculta lo que no corresponde.
+
+## Licencia
+
+[MIT](LICENSE)
