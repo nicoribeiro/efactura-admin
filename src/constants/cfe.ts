@@ -48,6 +48,17 @@ export const TIPOS_DOC: { id: number; name: string; label: string }[] = [
     name: "Nota_de_Debito_de_eFactura_Venta_por_Cuenta_Ajena",
     label: "ND eFactura Cta. Ajena",
   },
+  { id: 151, name: "eBoleta_de_entrada", label: "eBoleta de entrada" },
+  {
+    id: 152,
+    name: "Nota_de_Credito_de_eBoleta_de_entrada",
+    label: "NC eBoleta de entrada",
+  },
+  {
+    id: 153,
+    name: "Nota_de_Debito_de_eBoleta_de_entrada",
+    label: "ND eBoleta de entrada",
+  },
   { id: 181, name: "eRemito", label: "eRemito" },
   { id: 182, name: "eResguardo", label: "eResguardo" },
   { id: 201, name: "eTicket_Contingencia", label: "eTicket Contingencia" },
@@ -121,6 +132,21 @@ export const TIPOS_DOC: { id: number; name: string; label: string }[] = [
     id: 243,
     name: "Nota_de_Debito_de_eFactura_Venta_por_Cuenta_Ajena_Contingencia",
     label: "ND eFactura Cta. Ajena Contingencia",
+  },
+  {
+    id: 251,
+    name: "eBoleta_de_entrada_Contingencia",
+    label: "eBoleta de entrada Contingencia",
+  },
+  {
+    id: 252,
+    name: "Nota_de_Credito_de_eBoleta_de_entrada_Contingencia",
+    label: "NC eBoleta de entrada Contingencia",
+  },
+  {
+    id: 253,
+    name: "Nota_de_Debito_de_eBoleta_de_entrada_Contingencia",
+    label: "ND eBoleta de entrada Contingencia",
   },
   { id: 281, name: "eRemito_Contingencia", label: "eRemito Contingencia" },
   {
