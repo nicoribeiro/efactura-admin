@@ -52,7 +52,8 @@ interface EmpresaContextValue {
 
 const EmpresaContext = createContext<EmpresaContextValue | undefined>(undefined);
 
-const RUT_KEY = "efactura-empresa-rut";
+/** Empresa elegida en el encabezado; se borra al salir (la puede haber elegido otro usuario en el mismo navegador) */
+export const RUT_KEY = "efactura-empresa-rut";
 
 export function EmpresaProvider({ children }: { children: ReactNode }) {
   const [rut, setRutState] = useState<string | null>(() => localStorage.getItem(RUT_KEY));
@@ -78,6 +79,16 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
     setRutState(value);
     setBusqueda("");
   };
+
+  // La empresa guardada ya no es accesible (sin acceso a esa empresa, o no existe): se olvida y se toma la primera de
+  // la lista. Si no, cada pantalla la vuelve a pedir y la API la rechaza en un bucle.
+  const estadoError = (seleccionadaQuery.error as { statusCode?: number } | null)?.statusCode;
+  useEffect(() => {
+    if (rut && (estadoError === 401 || estadoError === 403 || estadoError === 404)) {
+      localStorage.removeItem(RUT_KEY);
+      setRutState(null);
+    }
+  }, [rut, estadoError]);
 
   // Si no hay empresa elegida se toma la primera con firma digital
   useEffect(() => {

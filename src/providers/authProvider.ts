@@ -1,5 +1,6 @@
 import type { AuthProvider } from "@refinedev/core";
 import { apiJson, tokenStorage } from "../api/http";
+import { RUT_KEY } from "../contexts/empresa";
 
 const EMAIL_KEY = "efactura-auth-email";
 /** Marca de contrasena temporal: hasta cambiarla, el panel solo muestra la pantalla de cambio */
@@ -115,6 +116,8 @@ export const authProvider: AuthProvider = {
         },
       );
       tokenStorage.set(session.token);
+      // Otro usuario en el mismo navegador: la empresa elegida antes puede no ser accesible para este
+      if (localStorage.getItem(EMAIL_KEY) !== email) localStorage.removeItem(RUT_KEY);
       localStorage.setItem(EMAIL_KEY, email);
       cuentaCache = null;
       // Usuario nuevo: primero confirma el email y despues cambia la contrasena temporal
@@ -143,6 +146,7 @@ export const authProvider: AuthProvider = {
     localStorage.removeItem(EMAIL_KEY);
     localStorage.removeItem(DEBE_CAMBIAR_KEY);
     localStorage.removeItem(DEBE_CONFIRMAR_KEY);
+    localStorage.removeItem(RUT_KEY);
     return { success: true, redirectTo: "/login" };
   },
 
