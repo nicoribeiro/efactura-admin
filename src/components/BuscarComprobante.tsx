@@ -105,7 +105,7 @@ export function BuscarComprobante() {
       <Tooltip open={!!error} title={error} placement="bottom">
         <Input.Search
           allowClear
-          placeholder="Comprobante (ej. A-2311)"
+          placeholder="CFE (ej. A-2311)"
           // Como bloque lo centra el flex del encabezado; en linea se alinea al texto (line-height 64px) y queda arriba
           style={{ width: 250, display: "block" }}
           value={texto}
@@ -123,7 +123,7 @@ export function BuscarComprobante() {
 
       <Modal
         open={!!resultados}
-        title={`${resultados?.length ?? 0} comprobantes con ese número`}
+        title={`${resultados?.length ?? 0} CFE con ese número`}
         footer={null}
         onCancel={() => setResultados(null)}
       >

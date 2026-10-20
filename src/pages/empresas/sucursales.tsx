@@ -167,7 +167,7 @@ export function SucursalesTable({ rut }: { rut: string }) {
                 {sucursales.length > 1 ? (
                   <Popconfirm
                     title={`¿Borrar la sucursal ${s.CdgDGISucur}?`}
-                    description="Solo se puede si no tiene comprobantes."
+                    description="Solo se puede si no tiene CFE."
                     okText="Borrar"
                     okButtonProps={{ danger: true }}
                     cancelText="Cancelar"

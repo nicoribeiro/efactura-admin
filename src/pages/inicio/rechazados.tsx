@@ -125,7 +125,7 @@ export function RechazadosCard({
         total > MAXIMO ? (
           <Link to={urlListado}>Ver los {total} rechazados</Link>
         ) : (
-          <Link to={urlListado}>Ver en comprobantes</Link>
+          <Link to={urlListado}>Ver en CFE</Link>
         )
       }
     >
@@ -146,7 +146,7 @@ export function RechazadosCard({
           scroll={{ x: true }}
         >
           <Table.Column<Fila>
-            title="Comprobante"
+            title="CFE"
             render={(_, f) => {
               const t = tipoDocByName(f.documento.tipo);
               const texto = `${t?.label ?? f.documento.tipo} ${f.documento.serie}-${f.documento.nro}`;

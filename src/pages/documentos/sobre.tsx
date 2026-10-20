@@ -39,7 +39,7 @@ export function SobreDocumentoInfo({
 
   const sobre = data?.sobre;
   if (!sobre)
-    return <Empty description="El comprobante no tiene sobre asociado" />;
+    return <Empty description="El CFE no tiene sobre asociado" />;
 
   const emitido = data?.direccion === "EMITIDO";
 
@@ -90,7 +90,7 @@ export function SobreDocumentoInfo({
         <Descriptions.Item label="Fecha">
           {formatFechaDia(sobre.fecha) || "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Comprobantes en el sobre">
+        <Descriptions.Item label="CFE en el sobre">
           {sobre.cantComprobantes ?? "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Id emisor">

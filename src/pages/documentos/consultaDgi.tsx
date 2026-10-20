@@ -99,7 +99,7 @@ export function ConsultaDgi({
           message.info("DGI todavía no tiene la respuesta");
           break;
         case "SIN_SOBRE":
-          message.warning("El comprobante no tiene sobre enviado a DGI");
+          message.warning("El CFE no tiene sobre enviado a DGI");
           break;
         default:
           setSinRespuesta(dayjs());

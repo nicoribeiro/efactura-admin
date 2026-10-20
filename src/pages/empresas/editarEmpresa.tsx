@@ -122,7 +122,7 @@ export function EditarEmpresa({
         </Divider>
         <Form.Item
           name="mailRecepcion"
-          label="Mail de recepción de comprobantes"
+          label="Mail de recepción de CFE"
           rules={[{ type: "email", message: "Mail inválido" }]}
         >
           <Input />
@@ -161,17 +161,17 @@ export function EditarEmpresa({
         <Form.Item
           name="fromEnvio"
           label="Remitente de los envíos"
-          extra="Dirección desde la que se envían los comprobantes a los receptores."
+          extra="Dirección desde la que se envían los CFE a los receptores."
         >
           <Input />
         </Form.Item>
 
         <Divider orientation="left" plain>
-          Comprobantes recibidos
+          CFE recibidos
         </Divider>
         <Form.Item
           name="diasRespuestaCfe"
-          label="Días para responder los comprobantes recibidos"
+          label="Días para responder los CFE recibidos"
           rules={[
             {
               pattern: /^(-1|[0-9]|[1-8][0-9]|90)?$/,
@@ -180,8 +180,8 @@ export function EditarEmpresa({
           ]}
           extra={
             <>
-              Al recibir un sobre, la respuesta a sus comprobantes (aceptación o rechazo de cada uno) se le envía al emisor
-              después de estos días; mientras tanto se puede rechazar un comprobante. 0 = enseguida, -1 = nunca sola
+              Al recibir un sobre, la respuesta a sus CFE (aceptación o rechazo de cada uno) se le envía al emisor
+              después de estos días; mientras tanto se puede rechazar un CFE. 0 = enseguida, -1 = nunca sola
               (solo a mano), vacío = el valor por defecto
               {empresa.diasRespuestaCfe == null && empresa.diasRespuestaCfeEfectivo != null
                 ? ` (hoy ${empresa.diasRespuestaCfeEfectivo === -1 ? "solo a mano" : `${empresa.diasRespuestaCfeEfectivo} días`})`

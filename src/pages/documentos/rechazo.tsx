@@ -15,8 +15,8 @@ import {
 /** Codigos de estado de DGI a texto */
 const ESTADOS_RECHAZO: Record<string, string> = {
   BS: "sobre rechazado",
-  BE: "comprobante rechazado",
-  CE: "comprobante observado",
+  BE: "CFE rechazado",
+  CE: "CFE observado",
 };
 
 function ListaMotivos({
@@ -69,7 +69,7 @@ export function RechazoDgiAlert({ rechazo }: { rechazo: RechazoDgi }) {
   const titulo =
     rechazo.nivel === "sobre"
       ? `DGI rechazó el sobre completo (${rechazo.estado})`
-      : `DGI rechazó este comprobante (${rechazo.estado})`;
+      : `DGI rechazó este CFE (${rechazo.estado})`;
   return (
     <Alert
       type="error"
@@ -84,7 +84,7 @@ export function RechazoDgiAlert({ rechazo }: { rechazo: RechazoDgi }) {
               type="secondary"
               style={{ marginTop: 8, marginBottom: 0, fontSize: 12 }}
             >
-              Al rechazarse el sobre, DGI no procesó ninguno de los comprobantes
+              Al rechazarse el sobre, DGI no procesó ninguno de los CFE
               que contenía.
             </Typography.Paragraph>
           )}

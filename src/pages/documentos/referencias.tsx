@@ -144,7 +144,7 @@ export function ReferenciasDocumento({
         {referencias.length > 0 && (
           <div>
             <Typography.Text type="secondary">
-              Este comprobante referencia a{desdeXml ? " (según su XML)" : ""}
+              Este CFE referencia a{desdeXml ? " (según su XML)" : ""}
             </Typography.Text>
             <Table<ReferenciaCfe>
               dataSource={referencias}
@@ -155,7 +155,7 @@ export function ReferenciasDocumento({
               scroll={{ x: true }}
             >
               <Table.Column<ReferenciaCfe>
-                title="Comprobante"
+                title="CFE"
                 sorter={ordenar<ReferenciaCfe>(textoReferencia)}
                 render={(_, r) => {
                   if (r.global) return <Tag>Referencia global</Tag>;
@@ -173,7 +173,7 @@ export function ReferenciasDocumento({
                   ) : r.fecha ? (
                     dayjs(r.fecha).format("DD/MM/YYYY")
                   ) : desdeXml ? (
-                    <NoInformado ayuda="El XML no trae FechaCFEref: DGI no puede validar que el comprobante referenciado exista" />
+                    <NoInformado ayuda="El XML no trae FechaCFEref: DGI no puede validar que el CFE referenciado exista" />
                   ) : (
                     "-"
                   )
@@ -216,7 +216,7 @@ export function ReferenciasDocumento({
               scroll={{ x: true }}
             >
               <Table.Column<DocumentoConReferencia>
-                title="Comprobante"
+                title="CFE"
                 sorter={ordenar<DocumentoConReferencia>(textoDocumento)}
                 render={(_, d) => {
                   const texto = textoDocumento(d);

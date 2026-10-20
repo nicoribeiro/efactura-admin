@@ -263,7 +263,7 @@ export function ReporteDiarioList() {
           render={(_, fila) => fila.reporte?.secuencial ?? "-"}
         />
         <Table.Column<Fila>
-          title="Comprobantes"
+          title="CFE"
           align="right"
           sorter={ordenar<Fila>((fila) => {
             const n = fila.reporte ? Number(cantidadComprobantes(fila.reporte)) : NaN;

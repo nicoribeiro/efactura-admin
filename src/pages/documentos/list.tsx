@@ -67,7 +67,7 @@ function RespuestaTag({ estado, quien }: { estado?: string | null; quien: string
     );
   const r = estado ? RESPUESTAS_ME[estado] : undefined;
   return (
-    <Tooltip title={estado ? `Respuesta ${quien} al comprobante` : `Sin respuesta ${quien} al comprobante`}>
+    <Tooltip title={estado ? `Respuesta ${quien} al CFE` : `Sin respuesta ${quien} al CFE`}>
       <Tag color={r?.color} style={{ marginInlineEnd: 0 }}>
         {estado ? (r?.label ?? estado) : "Sin respuesta"}
       </Tag>
@@ -257,7 +257,7 @@ export function DocumentoList() {
 
   return (
     <List
-      title={`Comprobantes - ${empresa.razon ?? empresa.rut}`}
+      title={`CFE - ${empresa.razon ?? empresa.rut}`}
       headerButtons={
         <ExportarCsv
           rut={empresa.rut}
@@ -352,7 +352,7 @@ export function DocumentoList() {
         />
         <Table.Column<Documento>
           title={
-            <Tooltip title={direccion === "EMITIDO" ? "Respuesta del receptor al comprobante (ME_)" : "Nuestra respuesta al comprobante (ME_)"}>
+            <Tooltip title={direccion === "EMITIDO" ? "Respuesta del receptor al CFE (ME_)" : "Nuestra respuesta al CFE (ME_)"}>
               ME
             </Tooltip>
           }

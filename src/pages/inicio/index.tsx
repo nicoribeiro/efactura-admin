@@ -46,6 +46,7 @@ import { PronosticoCaeTable } from "../empresas/pronosticoCae";
 import { INFO as INFO_PROCESOS } from "../procesos/info";
 import { GraficoPorDia, type PuntoDia } from "./grafico";
 import { RechazadosCard } from "./rechazados";
+import { RechazosReceptorCard, type RechazosReceptor } from "./rechazosReceptor";
 import { ordenar } from "../../utils/orden";
 
 interface FilaEmitidos {
@@ -135,6 +136,8 @@ interface Datos {
   /** Emitidos por tipo en los ultimos DIAS_RITMO dias (ritmo de uso de los CAE) */
   ritmo?: Map<number, number>;
   emailsError?: number;
+  /** Sobres y comprobantes emitidos rechazados por las empresas receptoras (M_ con BS, ME_ con BE) */
+  rechazosReceptor?: RechazosReceptor;
   carpetas?: Carpeta[];
   /** Venta USD de ayer (null si no esta cargada) y valores de UI: los usa el tope de UI de los eTickets */
   usdAyer?: number | null;
@@ -265,6 +268,10 @@ export function Inicio() {
         pageSize: 1,
       }).then((r) => r.count),
       carpetas: apiJson<Carpeta[]>("GET", `/empresa/${rut}/emails/carpetas`),
+      rechazosReceptor: apiJson<RechazosReceptor>("GET", `/empresa/${rut}/rechazosReceptor`, {
+        fromDate,
+        toDate,
+      }),
       usdAyer: apiJson<{ cotizaciones: { venta?: number | null }[] }>(
         "GET",
         "/tiposDeCambio",
@@ -425,7 +432,7 @@ export function Inicio() {
         gravedad: "error",
         texto: (
           <>
-            {calculo.rechazados} comprobante
+            {calculo.rechazados} CFE
             {calculo.rechazados === 1 ? "" : "s"} rechazado
             {calculo.rechazados === 1 ? "" : "s"} por DGI en el período (
             <Link to={urlComprobantes({ estado: "BE" }, desde, hasta)}>
@@ -542,7 +549,7 @@ export function Inicio() {
           <>
             {sinRespuesta.length === 1
               ? `${nombre(sinRespuesta[0])} sigue sin respuesta de DGI`
-              : `${sinRespuesta.length} comprobantes siguen sin respuesta de DGI`}{" "}
+              : `${sinRespuesta.length} CFE siguen sin respuesta de DGI`}{" "}
             más de una hora después de la hora indicada por DGI (
             <Link
               to={
@@ -552,7 +559,7 @@ export function Inicio() {
               }
             >
               {sinRespuesta.length === 1
-                ? "ver comprobante"
+                ? "ver CFE"
                 : "ver sin respuesta"}
             </Link>
             )
@@ -596,7 +603,7 @@ export function Inicio() {
           texto: (
             <>
               {atrasadas.length} respuesta{plural(atrasadas.length, "", "s")} a
-              comprobantes recibidos atrasada
+              CFE recibidos atrasada
               {plural(atrasadas.length, "", "s")}: ya tendría
               {plural(atrasadas.length, "", "n")} que haberse enviado al emisor
               ({link("ver sobres")})
@@ -609,7 +616,7 @@ export function Inicio() {
           texto: (
             <>
               {proximas.length} respuesta{plural(proximas.length, "", "s")} a
-              comprobantes recibidos se envía
+              CFE recibidos se envía
               {plural(proximas.length, "", "n")} al emisor en las próximas{" "}
               {HORAS_AVISO_RESPUESTA} horas (la primera el{" "}
               {proximas[0].cuando!.format("DD/MM HH:mm")}): si hay que rechazar
@@ -625,7 +632,7 @@ export function Inicio() {
               {aMano.length} sobre{plural(aMano.length, "", "s")} recibido
               {plural(aMano.length, "", "s")} espera
               {plural(aMano.length, "", "n")} que se envíe a mano la respuesta a
-              sus comprobantes ({link("ver sobres")})
+              sus CFE ({link("ver sobres")})
             </>
           ),
         });
@@ -750,27 +757,65 @@ export function Inicio() {
     valor: number | undefined;
     destacar?: boolean;
     link?: string;
+    /** Varios numeros en la misma tarjeta (cada uno con su link); valor queda para el skeleton */
+    partes?: {
+      etiqueta: string;
+      valor: number | undefined;
+      link?: string;
+      /** En rojo si es mayor que 0 (rechazos) */
+      alerta?: boolean;
+    }[];
   }[] = [
     {
-      titulo: "Emitidos",
-      valor: datos.resumen ? calculo.emitidos : undefined,
-      link: urlComprobantes({ direccion: "EMITIDO" }, desde, hasta),
+      titulo: "CFE",
+      valor: datos.resumen ? calculo.emitidos + calculo.recibidos : undefined,
+      partes: [
+        {
+          etiqueta: "Emitidos",
+          valor: datos.resumen ? calculo.emitidos : undefined,
+          link: urlComprobantes({ direccion: "EMITIDO" }, desde, hasta),
+        },
+        {
+          etiqueta: "Recibidos",
+          valor: datos.resumen ? calculo.recibidos : undefined,
+          link: urlComprobantes({ direccion: "RECIBIDO" }, desde, hasta),
+        },
+      ],
     },
     {
-      titulo: "Recibidos",
-      valor: datos.resumen ? calculo.recibidos : undefined,
-      link: urlComprobantes({ direccion: "RECIBIDO" }, desde, hasta),
-    },
-    {
-      titulo: "Rechazados por DGI",
-      valor: datos.resumen ? calculo.rechazados : undefined,
+      titulo: "DGI",
+      valor: datos.resumen ? calculo.rechazados + calculo.sinRespuesta : undefined,
       destacar: calculo.rechazados > 0,
-      link: urlComprobantes({ estado: "BE" }, desde, hasta),
+      partes: [
+        {
+          etiqueta: "Rechazados",
+          valor: datos.resumen ? calculo.rechazados : undefined,
+          link: urlComprobantes({ estado: "BE" }, desde, hasta),
+          alerta: true,
+        },
+        {
+          etiqueta: "Sin respuesta",
+          valor: datos.resumen ? calculo.sinRespuesta : undefined,
+          link: urlComprobantes({ estado: "SIN" }, desde, hasta),
+        },
+      ],
     },
     {
-      titulo: "Sin respuesta de DGI",
-      valor: datos.resumen ? calculo.sinRespuesta : undefined,
-      link: urlComprobantes({ estado: "SIN" }, desde, hasta),
+      titulo: "Rechazos Receptores",
+      valor: datos.rechazosReceptor
+        ? datos.rechazosReceptor.sobres.total + datos.rechazosReceptor.cfes.total
+        : undefined,
+      destacar:
+        (datos.rechazosReceptor?.sobres.total ?? 0) + (datos.rechazosReceptor?.cfes.total ?? 0) > 0,
+      partes: [
+        {
+          etiqueta: "Sobres",
+          valor: datos.rechazosReceptor?.sobres.total,
+          link: `/sobres?${new URLSearchParams({ direccion: "EMITIDO", respuestaM: "BS", desde: desde.format("YYYY-MM-DD"), hasta: hasta.format("YYYY-MM-DD") })}`,
+          alerta: true,
+        },
+        { etiqueta: "CFE", valor: datos.rechazosReceptor?.cfes.total, alerta: true },
+      ],
     },
     {
       titulo: "Emails con error",
@@ -813,15 +858,42 @@ export function Inicio() {
 
       <Row gutter={[16, 16]}>
         {kpis.map((k) => (
-          <Col key={k.titulo} xs={12} md={8} xl={4}>
+          <Col key={k.titulo} xs={12} md={8} xl={4} style={{ display: "flex" }}>
             <Card
               size="small"
               hoverable={!!k.link}
               onClick={k.link ? () => navigate(k.link!) : undefined}
-              style={{ cursor: k.link ? "pointer" : undefined }}
+              // Misma altura en todas las filas: la de las tarjetas con dos numeros
+              style={{ cursor: k.link ? "pointer" : undefined, width: "100%", height: "100%", minHeight: 110 }}
             >
               {k.valor === undefined && loading ? (
                 <Skeleton active paragraph={false} />
+              ) : k.partes ? (
+                <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                  <Typography.Text type="secondary">{k.titulo}</Typography.Text>
+                  <Space size={24}>
+                    {k.partes.map((p) => (
+                      <Statistic
+                        key={p.etiqueta}
+                        title={
+                          p.link ? (
+                            <Link to={p.link} onClick={(e) => e.stopPropagation()}>
+                              {p.etiqueta}
+                            </Link>
+                          ) : (
+                            p.etiqueta
+                          )
+                        }
+                        value={p.valor ?? "-"}
+                        valueStyle={{
+                          color: p.alerta && (p.valor ?? 0) > 0 ? colores.error : undefined,
+                          fontWeight: 600,
+                          fontSize: 20,
+                        }}
+                      />
+                    ))}
+                  </Space>
+                </Space>
               ) : (
                 <Statistic
                   title={k.titulo}
@@ -864,7 +936,7 @@ export function Inicio() {
         </Col>
 
         <Col xs={24} xl={14}>
-          <Card size="small" title="Comprobantes por día">
+          <Card size="small" title="CFE por día">
             {errorSeccion("resumen") ??
               (loading && !datos.resumen ? (
                 <Skeleton active />
@@ -885,6 +957,10 @@ export function Inicio() {
             hasta={hasta}
             urlListado={urlComprobantes({ estado: "BE" }, desde, hasta)}
           />
+        </Col>
+
+        <Col xs={24}>
+          <RechazosReceptorCard datos={datos.rechazosReceptor} desde={desde} hasta={hasta} />
         </Col>
 
         <Col xs={24} xl={14}>

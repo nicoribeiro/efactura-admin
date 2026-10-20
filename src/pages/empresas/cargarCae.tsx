@@ -46,7 +46,7 @@ function problemas(
   const p: string[] = [];
   if (cae.rucE !== rut) p.push(`Es de otra empresa (RUT ${cae.rucE})`);
   if (!TIPOS_DOC.some((t) => t.id === cae.tcfe))
-    p.push(`Tipo de comprobante desconocido (${cae.tcfe})`);
+    p.push(`Tipo de CFE desconocido (${cae.tcfe})`);
   if (cae.dNro <= 0 || cae.hNro < cae.dNro) p.push("Rango inválido");
   const vence = dayjs(cae.fvd);
   if (!vence.isValid() || vence.isBefore(dayjs().add(8, "day"), "day"))

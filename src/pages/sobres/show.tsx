@@ -134,11 +134,11 @@ export function SobreShow() {
                 <EstadoSobreTag estado={sobre.estadoEmpresa} />
               </Descriptions.Item>
             )}
-            <Descriptions.Item label="Comprobantes">
+            <Descriptions.Item label="CFE">
               {sobre.comprobantes.length}
             </Descriptions.Item>
             {!emitido && empresa && (
-              <Descriptions.Item label="Respuesta a los comprobantes" span={2}>
+              <Descriptions.Item label="Respuesta a los CFE" span={2}>
                 <RespuestaCfeEstado rut={empresa.rut} sobre={sobre} onEnviada={() => query.refetch()} />
               </Descriptions.Item>
             )}
@@ -146,7 +146,7 @@ export function SobreShow() {
 
           <div>
             <Typography.Title level={5}>
-              Comprobantes del sobre ({sobre.comprobantes.length})
+              CFE del sobre ({sobre.comprobantes.length})
             </Typography.Title>
             <Table<ComprobanteResumen>
               dataSource={sobre.comprobantes}
@@ -156,7 +156,7 @@ export function SobreShow() {
               scroll={{ x: true }}
             >
               <Table.Column<ComprobanteResumen>
-                title="Comprobante"
+                title="CFE"
                 sorter={ordenar<ComprobanteResumen>(etiquetaComprobante)}
                 render={(_, c) => {
                   const url = urlDocumento(c, sobre.direccion);

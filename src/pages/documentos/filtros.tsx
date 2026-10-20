@@ -173,7 +173,7 @@ export function FiltrosComprobantes({
     >
       <Row gutter={[16, 0]}>
         <Col xs={24} md={8} lg={6}>
-          <Form.Item name="direccion" label="Comprobantes">
+          <Form.Item name="direccion" label="CFE">
             <Segmented
               block
               options={[
@@ -238,12 +238,12 @@ export function FiltrosComprobantes({
           </Row>
         </Col>
         <Col xs={24} lg={14}>
-          <Typography.Text strong>Comprobante</Typography.Text>
+          <Typography.Text strong>CFE</Typography.Text>
           <Typography.Text
             type="secondary"
             style={{ fontSize: 12, marginLeft: 8 }}
           >
-            tipo y serie filtran el listado; con número se busca un comprobante
+            tipo y serie filtran el listado; con número se busca un CFE
             puntual
           </Typography.Text>
           <Row gutter={8} style={{ marginTop: 8 }}>
@@ -253,7 +253,7 @@ export function FiltrosComprobantes({
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  placeholder="Tipo de comprobante"
+                  placeholder="Tipo de CFE"
                   options={TIPOS_DOC.map((t) => ({
                     value: t.id,
                     label: `${t.id} - ${t.label}`,

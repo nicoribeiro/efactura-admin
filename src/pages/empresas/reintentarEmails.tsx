@@ -125,7 +125,7 @@ export function ReintentarEmail({
     modal.confirm({
       title: "Este email trae un sobre recibido que nunca se registró",
       content:
-        "Reprocesarlo registra el sobre y sus comprobantes (puede ser de un período pasado) y le envía la respuesta (ACK) al emisor.",
+        "Reprocesarlo registra el sobre y sus CFE (puede ser de un período pasado) y le envía la respuesta (ACK) al emisor.",
       okText: "Reintentar y responder",
       cancelText: "Cancelar",
       onOk: click,
@@ -284,7 +284,7 @@ export function ReintentarTodos({ rut, onTerminado }: { rut: string; onTerminado
                   description={
                     <Space direction="vertical">
                       <span>
-                        Reprocesarlos registra los sobres y sus comprobantes (pueden ser de períodos pasados) y le
+                        Reprocesarlos registra los sobres y sus CFE (pueden ser de períodos pasados) y le
                         envía la respuesta (ACK) a cada emisor.
                       </span>
                       <Checkbox checked={incluirSobres} onChange={(e) => setIncluirSobres(e.target.checked)}>
