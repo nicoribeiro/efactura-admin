@@ -814,7 +814,12 @@ export function Inicio() {
           link: `/sobres?${new URLSearchParams({ direccion: "EMITIDO", respuestaM: "BS", desde: desde.format("YYYY-MM-DD"), hasta: hasta.format("YYYY-MM-DD") })}`,
           alerta: true,
         },
-        { etiqueta: "CFE", valor: datos.rechazosReceptor?.cfes.total, alerta: true },
+        {
+          etiqueta: "CFE",
+          valor: datos.rechazosReceptor?.cfes.total,
+          link: urlComprobantes({ direccion: "EMITIDO", estadoReceptor: "BE" }, desde, hasta),
+          alerta: true,
+        },
       ],
     },
     {
