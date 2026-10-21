@@ -40,6 +40,13 @@ const leerAbierto = () => {
   }
 };
 
+/** Estado del CFE en la respuesta del receptor (ME_), solo emitidos */
+const ESTADOS_RECEPTOR = [
+  { value: "AE", label: "Aceptado" },
+  { value: "BE", label: "Rechazado" },
+  { value: "SIN", label: "Sin respuesta" },
+];
+
 /** Valor de un filtro aplicado (los que ya se usaron en la consulta, no lo que se esta editando) */
 const valorFiltro = (filters: CrudFilters, campo: string) =>
   filters.find((f) => "field" in f && f.field === campo)?.value as unknown;
@@ -62,6 +69,12 @@ function resumen(filters: CrudFilters) {
   if (estado)
     tags.push(
       `DGI: ${ESTADOS_FILTRO.find((e) => e.value === estado)?.label ?? estado}`,
+    );
+
+  const estadoReceptor = valorFiltro(filters, "estadoReceptor");
+  if (estadoReceptor)
+    tags.push(
+      `Receptor: ${ESTADOS_RECEPTOR.find((e) => e.value === estadoReceptor)?.label ?? estadoReceptor}`,
     );
 
   const contraparte =
@@ -94,6 +107,7 @@ interface Props {
     direccion: string;
     fecha: Rango;
     estado?: string;
+    estadoReceptor?: string;
     idTipoDoc?: number;
     serie?: string;
     nro?: number;
@@ -148,6 +162,7 @@ export function FiltrosComprobantes({
       direccion: "EMITIDO",
       fecha: rangoPorDefecto(),
       estado: undefined,
+      estadoReceptor: undefined,
     });
     form?.submit();
   };
@@ -173,7 +188,7 @@ export function FiltrosComprobantes({
     >
       <Row gutter={[16, 0]}>
         <Col xs={24} md={8} lg={6}>
-          <Form.Item name="direccion" label="Comprobantes">
+          <Form.Item name="direccion" label="CFE">
             <Segmented
               block
               options={[
@@ -193,6 +208,20 @@ export function FiltrosComprobantes({
               onChange={() => setTimeout(() => form?.submit())}
             />
           </Form.Item>
+          {!recibidos && (
+            <Form.Item
+              name="estadoReceptor"
+              label="Estado Receptor"
+              tooltip="Estado del CFE en la respuesta de la empresa receptora. Los emitidos a quien no es emisor electrónico no entran en ninguno"
+            >
+              <Select
+                allowClear
+                placeholder="Todos"
+                options={[{ value: "", label: "Todos" }, ...ESTADOS_RECEPTOR]}
+                onChange={() => setTimeout(() => form?.submit())}
+              />
+            </Form.Item>
+          )}
         </Col>
         <Col xs={24} md={16} lg={18}>
           <Form.Item label="Período" style={{ marginBottom: 8 }}>
@@ -238,12 +267,12 @@ export function FiltrosComprobantes({
           </Row>
         </Col>
         <Col xs={24} lg={14}>
-          <Typography.Text strong>Comprobante</Typography.Text>
+          <Typography.Text strong>CFE</Typography.Text>
           <Typography.Text
             type="secondary"
             style={{ fontSize: 12, marginLeft: 8 }}
           >
-            tipo y serie filtran el listado; con número se busca un comprobante
+            tipo y serie filtran el listado; con número se busca un CFE
             puntual
           </Typography.Text>
           <Row gutter={8} style={{ marginTop: 8 }}>
@@ -253,7 +282,7 @@ export function FiltrosComprobantes({
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  placeholder="Tipo de comprobante"
+                  placeholder="Tipo de CFE"
                   options={TIPOS_DOC.map((t) => ({
                     value: t.id,
                     label: `${t.id} - ${t.label}`,

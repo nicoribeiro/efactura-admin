@@ -132,7 +132,7 @@ export function ReporteDetalle({
         <Descriptions.Item label="Secuencia de envío">
           {c.SecEnvio ?? "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Comprobantes">
+        <Descriptions.Item label="CFE">
           {c.CantComprobantes ?? "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Firmado">
@@ -167,7 +167,7 @@ export function ReporteDetalle({
 
       <div>
         <Typography.Title level={5}>
-          Resumen por tipo de comprobante
+          Resumen por tipo de CFE
         </Typography.Title>
         <Table<ResumenTipo>
           dataSource={reporte.resumenes}
@@ -180,7 +180,7 @@ export function ReporteDetalle({
               <TablaMontos items={resumen.montos} />
             ),
           }}
-          locale={{ emptyText: "El reporte no tiene comprobantes" }}
+          locale={{ emptyText: "El reporte no tiene CFE" }}
         >
           <Table.Column<ResumenTipo>
             title="Tipo"

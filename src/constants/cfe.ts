@@ -172,7 +172,7 @@ export const ESTADOS_CFE: Record<string, { label: string; color: string }> = {
 
 /** Texto del estado Recibido al pasar el mouse */
 export const AYUDA_RECIBIDO =
-  "DGI recibió el sobre pero todavía no respondió por el comprobante (en producción responde aprox. una hora después)";
+  "DGI recibió el sobre pero todavía no respondió por el CFE (en producción responde aprox. una hora después)";
 
 /**
  * Estado DGI a mostrar de un comprobante: el suyo; si no tiene pero DGI ya acepto su sobre (AS), RECIBIDO; si no, null

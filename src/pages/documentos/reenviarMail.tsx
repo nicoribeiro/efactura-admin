@@ -59,7 +59,7 @@ export function ReenviarMail({
       );
       const hay = !!(d.xml.destino || d.pdf.destino);
       modal.confirm({
-        title: hay ? "¿Reenviar el comprobante por mail?" : "No hay a quién enviarlo",
+        title: hay ? "¿Reenviar el CFE por mail?" : "No hay a quién enviarlo",
         icon: <MailOutlined />,
         content: (
           <Space direction="vertical" size={4} style={{ marginTop: 8 }}>

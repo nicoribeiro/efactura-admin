@@ -53,16 +53,16 @@ export function RespuestaCfeEstado({
     );
 
   if (sobre.estadoEmpresa === "BS")
-    return <Typography.Text type="secondary">Sobre rechazado: sus comprobantes no se responden</Typography.Text>;
+    return <Typography.Text type="secondary">Sobre rechazado: sus CFE no se responden</Typography.Text>;
 
   if (!sobre.respuestaCfePendiente)
-    return <Typography.Text type="secondary">Sin respuesta (sobre recibido antes de que se respondieran los comprobantes)</Typography.Text>;
+    return <Typography.Text type="secondary">Sin respuesta (sobre recibido antes de que se respondieran los CFE)</Typography.Text>;
 
   const enviar = () =>
     modal.confirm({
-      title: "Enviar ahora la respuesta a los comprobantes",
+      title: "Enviar ahora la respuesta a los CFE",
       content:
-        "Se le envía al emisor la aceptación o el rechazo de cada comprobante del sobre. Después ya no se puede rechazar ninguno.",
+        "Se le envía al emisor la aceptación o el rechazo de cada CFE del sobre. Después ya no se puede rechazar ninguno.",
       okText: "Enviar",
       cancelText: "Cancelar",
       onOk: async () => {
@@ -130,7 +130,7 @@ export function RechazoComercial({
         motivo,
         detalle: detalleRechazo ?? "",
       });
-      message.success(motivo ? "Comprobante rechazado: va en la respuesta al emisor" : "Rechazo deshecho");
+      message.success(motivo ? "CFE rechazado: va en la respuesta al emisor" : "Rechazo deshecho");
       setAbierto(false);
       onCambio();
     } catch (e) {
@@ -155,7 +155,7 @@ export function RechazoComercial({
             onClick={() =>
               modal.confirm({
                 title: "Deshacer el rechazo",
-                content: "El comprobante vuelve a ir aceptado en la respuesta al emisor (salvo que lo rechace un control de recepción).",
+                content: "El CFE vuelve a ir aceptado en la respuesta al emisor (salvo que lo rechace un control de recepción).",
                 okText: "Deshacer",
                 cancelText: "Cancelar",
                 onOk: () => enviar(null),
@@ -175,7 +175,7 @@ export function RechazoComercial({
       </Button>
       <Modal
         open={abierto}
-        title="Rechazar el comprobante"
+        title="Rechazar el CFE"
         okText="Rechazar"
         okButtonProps={{ danger: true }}
         cancelText="Cancelar"
@@ -185,7 +185,7 @@ export function RechazoComercial({
         destroyOnHidden
       >
         <Typography.Paragraph type="secondary">
-          El rechazo va en la respuesta a los comprobantes que se le envía al emisor. El comprobante sigue siendo válido
+          El rechazo va en la respuesta a los CFE que se le envía al emisor. El CFE sigue siendo válido
           para DGI: si corresponde, el emisor tiene que hacer una nota de corrección.
         </Typography.Paragraph>
         <Form form={form} layout="vertical" onFinish={(v) => enviar(v.motivo, v.detalle)} requiredMark={false}>

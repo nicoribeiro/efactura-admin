@@ -136,7 +136,7 @@ export function DocumentoShow() {
       title={
         doc
           ? `${tipo?.label ?? doc.tipo} ${doc.serie}-${doc.nro}`
-          : "Comprobante"
+          : "CFE"
       }
       headerButtons={() => (
         <Space>
@@ -168,7 +168,7 @@ export function DocumentoShow() {
                     <span key={i}>{o}</span>
                   ))}
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    Los controles marcados como «observado» no rechazan el comprobante: solo quedan registrados.
+                    Los controles marcados como «observado» no rechazan el CFE: solo quedan registrados.
                   </Typography.Text>
                 </Space>
               }

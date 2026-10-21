@@ -67,7 +67,7 @@ function RespuestaTag({ estado, quien }: { estado?: string | null; quien: string
     );
   const r = estado ? RESPUESTAS_ME[estado] : undefined;
   return (
-    <Tooltip title={estado ? `Respuesta ${quien} al comprobante` : `Sin respuesta ${quien} al comprobante`}>
+    <Tooltip title={estado ? `Respuesta ${quien} al CFE` : `Sin respuesta ${quien} al CFE`}>
       <Tag color={r?.color} style={{ marginInlineEnd: 0 }}>
         {estado ? (r?.label ?? estado) : "Sin respuesta"}
       </Tag>
@@ -84,6 +84,8 @@ interface FiltrosForm {
   rutReceptor?: string;
   razonReceptor?: string;
   estado?: string;
+  /** Solo emitidos: estado del CFE en la respuesta del receptor (ME_) */
+  estadoReceptor?: string;
 }
 
 /**
@@ -101,6 +103,7 @@ function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm & {
       ? [dayjs(desde), dayjs(hasta)]
       : rangoPorDefecto();
   const estado = params.get("estado")?.toUpperCase();
+  const estadoReceptor = params.get("estadoReceptor")?.toUpperCase();
   const numero = (clave: string) => {
     const n = Number(params.get(clave));
     return params.get(clave) && Number.isInteger(n) && n > 0 ? n : undefined;
@@ -113,6 +116,10 @@ function filtrosDesdeUrl(params: URLSearchParams): FiltrosForm & {
     fecha,
     estado:
       estado && ["AE", "BE", "CE", "SIN"].includes(estado) ? estado : undefined,
+    estadoReceptor:
+      estadoReceptor && ["AE", "BE", "SIN"].includes(estadoReceptor)
+        ? estadoReceptor
+        : undefined,
     idTipoDoc: numero("idTipoDoc"),
     serie: texto("serie"),
     nro: numero("nro"),
@@ -130,6 +137,10 @@ function filtrosAUrl(valores: FiltrosForm, page: number) {
   }
   const opcionales = {
     estado: valores.estado || undefined,
+    estadoReceptor:
+      valores.direccion === "EMITIDO"
+        ? valores.estadoReceptor || undefined
+        : undefined,
     idTipoDoc: valores.idTipoDoc,
     serie: valores.serie?.trim(),
     nro: valores.nro,
@@ -155,6 +166,15 @@ function aFiltros(values: FiltrosForm): CrudFilters {
     { field: "direccion", operator: "eq", value: values.direccion },
     { field: "fecha", operator: "eq", value: aFiltroFecha(values.fecha) },
     { field: "estado", operator: "eq", value: values.estado || undefined },
+    // La respuesta del receptor es de los emitidos (en los recibidos el receptor somos nosotros)
+    {
+      field: "estadoReceptor",
+      operator: "eq",
+      value:
+        values.direccion === "EMITIDO"
+          ? values.estadoReceptor || undefined
+          : undefined,
+    },
     { field: "idTipoDoc", operator: "eq", value: values.idTipoDoc },
     {
       field: "serie",
@@ -257,7 +277,7 @@ export function DocumentoList() {
 
   return (
     <List
-      title={`Comprobantes - ${empresa.razon ?? empresa.rut}`}
+      title={`CFE - ${empresa.razon ?? empresa.rut}`}
       headerButtons={
         <ExportarCsv
           rut={empresa.rut}
@@ -352,8 +372,8 @@ export function DocumentoList() {
         />
         <Table.Column<Documento>
           title={
-            <Tooltip title={direccion === "EMITIDO" ? "Respuesta del receptor al comprobante (ME_)" : "Nuestra respuesta al comprobante (ME_)"}>
-              ME
+            <Tooltip title={direccion === "EMITIDO" ? "Respuesta del receptor al CFE (ME_)" : "Nuestra respuesta al CFE (ME_)"}>
+              {direccion === "EMITIDO" ? "Estado Receptor" : "ME"}
             </Tooltip>
           }
           dataIndex="respuestaME"

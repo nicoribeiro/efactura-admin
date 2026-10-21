@@ -170,7 +170,7 @@ export function GenerarReportes({
             type="info"
             showIcon
             message={`El día ya tiene un reporte aceptado: se envía uno nuevo con secuencial ${reemplaza} que lo reemplaza`}
-            description="Se arma con los comprobantes que hay ahora en el sistema para ese día."
+            description="Se arma con los CFE que hay ahora en el sistema para ese día."
           />
         )}
         {recientes.length > 0 && (
@@ -178,7 +178,7 @@ export function GenerarReportes({
             type="warning"
             showIcon
             message={`${recientes.length === 1 ? "Un día es" : `${recientes.length} días son`} de los últimos ${DIAS_ATRASO_AUTOMATICO - 1} días`}
-            description="El proceso automático los reporta con atraso a propósito. Si después se emite o cambia algún comprobante de ese día, habrá que regenerar el reporte."
+            description="El proceso automático los reporta con atraso a propósito. Si después se emite o cambia algún CFE de ese día, habrá que regenerar el reporte."
           />
         )}
         <Table<{ fecha: string }>

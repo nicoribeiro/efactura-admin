@@ -35,9 +35,9 @@ export const INFO: Record<
     config: "EmisoresElectronicosPoller.run",
   },
   RespuestaCfePoller: {
-    titulo: "Respuesta a los comprobantes recibidos",
+    titulo: "Respuesta a los CFE recibidos",
     descripcion:
-      "Envía a cada emisor la aceptación o el rechazo de los comprobantes de sus sobres cuando se cumplen los días de espera de la empresa.",
+      "Envía a cada emisor la aceptación o el rechazo de los CFE de sus sobres cuando se cumplen los días de espera de la empresa.",
     config: "RespuestaCfePoller.run",
   },
   NotificationPoller: {

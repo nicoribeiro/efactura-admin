@@ -379,7 +379,7 @@ export function SobreList() {
                     <Form.Item
                       name="respuestaME"
                       label={
-                        <Tooltip title="Nuestra respuesta a los comprobantes del sobre (ME_)">
+                        <Tooltip title="Nuestra respuesta a los CFE del sobre (ME_)">
                           ME
                         </Tooltip>
                       }
@@ -483,7 +483,7 @@ export function SobreList() {
           }
         />
         <Table.Column<SobreResumen>
-          title="Comprobantes"
+          title="CFE"
           // Orden en la API por el texto del primer comprobante (tipo, serie y numero)
           dataIndex="comprobantes"
           sorter

@@ -86,7 +86,7 @@ export default function App() {
                 name: "documentos",
                 list: "/documentos",
                 show: "/documentos/show/:id",
-                meta: { label: "Comprobantes", icon: <FileTextOutlined /> },
+                meta: { label: "CFE", icon: <FileTextOutlined /> },
               },
               {
                 name: "sobres",

@@ -111,7 +111,7 @@ export function ExportarCsv({
           ? `_${dayjs(fecha[0]).format("YYYYMMDD")}-${dayjs(fecha[1]).format("YYYYMMDD")}`
           : "";
       descargar(
-        `comprobantes-${direccion === "EMITIDO" ? "emitidos" : "recibidos"}_${rut}${periodo}.csv`,
+        `CFE-${direccion === "EMITIDO" ? "emitidos" : "recibidos"}_${rut}${periodo}.csv`,
         aCsv(filasCsv(docs.slice(0, cantidad), direccion)),
       );
     } catch (error) {
@@ -128,7 +128,7 @@ export function ExportarCsv({
   const confirmar = () => {
     if (total <= LIMITE) return exportar();
     modal.confirm({
-      title: `Hay ${total.toLocaleString("es-UY")} comprobantes`,
+      title: `Hay ${total.toLocaleString("es-UY")} CFE`,
       content: `Se exportan los primeros ${LIMITE.toLocaleString("es-UY")} (los más recientes). Para el resto, acotá el período.`,
       okText: "Exportar",
       cancelText: "Cancelar",

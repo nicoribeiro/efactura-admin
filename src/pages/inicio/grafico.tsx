@@ -163,7 +163,7 @@ export function GraficoPorDia({
           width={ancho}
           height={ALTO}
           role="img"
-          aria-label="Comprobantes emitidos y recibidos por día"
+          aria-label="CFE emitidos y recibidos por día"
           style={{ display: "block" }}
         >
           {ticks.map((t) => (
