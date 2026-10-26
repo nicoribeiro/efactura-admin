@@ -31,6 +31,11 @@ export interface Empresa {
   diasRespuestaCfeEfectivo?: number;
   /** false = dada de baja: los procesos automaticos (avisos, emails entrantes, reporte diario) no la procesan */
   activa?: boolean;
+  /**
+   * Reporte diario: automatico = lo manda el poller de la API; hastaEsperado (yyyy-MM-dd) = ultimo dia que ya deberia
+   * estar reportado (los mas nuevos se mandan con atraso a proposito). Sin el campo (API anterior): hasta anteayer.
+   */
+  reporteDiario?: { automatico: boolean; hastaEsperado: string | null };
 }
 
 /** Version reducida que la API incluye dentro de CFE, sobres, CAE y reportes */

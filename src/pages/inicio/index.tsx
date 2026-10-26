@@ -376,8 +376,13 @@ export function Inicio() {
     const porEstado = (estado: string | null) =>
       sumar(emitidos.filter((f) => f.estado === estado));
 
-    // Dias del periodo sin reporte. El reporte del dia D se envia el dia D+1 a la noche: se revisa hasta anteayer
-    const limite = dayjs().subtract(2, "day").startOf("day");
+    // Dias del periodo sin reporte. Con el poller de la API, los dias mas nuevos se mandan con atraso a proposito: se
+    // revisa hasta el ultimo que ya deberia estar (hastaEsperado). Si no (o API anterior): hasta anteayer, porque el
+    // reporte del dia D se envia el dia D+1
+    const limite =
+      empresa?.reporteDiario?.automatico && empresa.reporteDiario.hastaEsperado
+        ? dayjs(empresa.reporteDiario.hastaEsperado).startOf("day")
+        : dayjs().subtract(2, "day").startOf("day");
     const conReporte = new Set((datos.reportes ?? []).map((r) => r.fecha));
     const sinReporte: string[] = [];
     for (
@@ -396,8 +401,10 @@ export function Inicio() {
       observados: porEstado("CE"),
       sinRespuesta: porEstado(null),
       sinReporte,
+      limiteReporte: limite,
+      reporteConAtraso: !!(empresa?.reporteDiario?.automatico && empresa.reporteDiario.hastaEsperado),
     };
-  }, [datos, desde, hasta]);
+  }, [datos, desde, hasta, empresa]);
 
   const pronostico = useMemo(
     () =>
@@ -442,6 +449,46 @@ export function Inicio() {
           </>
         ),
       });
+
+    // Rechazos de las empresas receptoras (sobres enteros, respuesta M_ con BS, y CFE, respuesta ME_ con BE)
+    const sobresReceptor = datos.rechazosReceptor?.sobres.total ?? 0;
+    const cfesReceptor = datos.rechazosReceptor?.cfes.total ?? 0;
+    if (sobresReceptor + cfesReceptor > 0) {
+      const partes: ReactNode[] = [];
+      if (sobresReceptor > 0)
+        partes.push(
+          <Link
+            key="sobres"
+            to={`/sobres?${new URLSearchParams({ direccion: "EMITIDO", respuestaM: "BS", desde: desde.format("YYYY-MM-DD"), hasta: hasta.format("YYYY-MM-DD") })}`}
+          >
+            {sobresReceptor} sobre{sobresReceptor === 1 ? "" : "s"}
+          </Link>,
+        );
+      if (cfesReceptor > 0)
+        partes.push(
+          <Link
+            key="cfes"
+            to={urlComprobantes({ direccion: "EMITIDO", estadoReceptor: "BE" }, desde, hasta)}
+          >
+            {cfesReceptor} CFE
+          </Link>,
+        );
+      lista.push({
+        gravedad: "error",
+        texto: (
+          <>
+            Rechazados por las empresas receptoras en el período:{" "}
+            {partes.length === 2 ? (
+              <>
+                {partes[0]} y {partes[1]}
+              </>
+            ) : (
+              partes[0]
+            )}
+          </>
+        ),
+      });
+    }
 
     // CAE: cuando hace falta uno nuevo por tipo (se agota al ritmo actual o vence)
     const linkCae = (
@@ -968,7 +1015,7 @@ export function Inicio() {
           <RechazosReceptorCard datos={datos.rechazosReceptor} desde={desde} hasta={hasta} />
         </Col>
 
-        <Col xs={24} xl={14}>
+        <Col xs={24}>
           <Card size="small" title="Emitidos por tipo">
             {errorSeccion("resumen") ?? (
               <Table<FilaTipoEmitidos>
@@ -1036,7 +1083,7 @@ export function Inicio() {
           </Card>
         </Col>
 
-        <Col xs={24} xl={10}>
+        <Col xs={24}>
           <Card size="small" title="Recibidos por tipo">
             {errorSeccion("resumen") ?? (
               <Table<FilaTipoRecibidos>
@@ -1102,7 +1149,10 @@ export function Inicio() {
         style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}
       >
         Totales por moneda sumados tal cual (las notas de crédito no se restan).
-        El reporte diario se revisa hasta anteayer. El pronóstico de CAE usa el
+        {calculo.reporteConAtraso
+          ? `El reporte diario se revisa hasta el ${calculo.limiteReporte.format("DD/MM/YYYY")}: los días más nuevos se envían a DGI con atraso a propósito.`
+          : "El reporte diario se revisa hasta anteayer."}{" "}
+        El pronóstico de CAE usa el
         ritmo de emisión de los últimos {DIAS_RITMO} días, sin importar el
         período elegido.
       </Typography.Paragraph>
