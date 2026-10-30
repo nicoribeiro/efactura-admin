@@ -2,7 +2,7 @@ import { Space, Spin, Tag, Tooltip, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { apiJson } from "../../api/http";
-import { ESTADOS_CFE } from "../../constants/cfe";
+import { ESTADOS_CFE, formatFechaApi } from "../../constants/cfe";
 import { urlDocumento } from "../../utils/busqueda";
 import { rechazoDelSobre } from "../../utils/dgi";
 import {
@@ -26,6 +26,40 @@ export function EstadoSobreTag({
     </Tag>
   ) : (
     <Tag>{sinValor}</Tag>
+  );
+}
+
+/**
+ * Sobre emitido sin estado de DGI: DGI acusa recibo en el mismo envio, asi que sin estado nunca le llego (no esta
+ * "esperando respuesta"). Con el error del ultimo intento, en rojo y con el error al pasar el mouse.
+ */
+export function NoEnviadoDgiTag({
+  error,
+  ultimoIntento,
+  intentos,
+}: {
+  error?: string | null;
+  ultimoIntento?: string | null;
+  intentos?: number | null;
+}) {
+  if (!error)
+    return (
+      <Tooltip title="DGI no recibió el sobre (sin acuse de recibo)">
+        <Tag>No enviado</Tag>
+      </Tooltip>
+    );
+  return (
+    <Tooltip
+      title={
+        <>
+          <div style={{ wordBreak: "break-word" }}>{error}</div>
+          {ultimoIntento && <div>Último intento: {formatFechaApi(ultimoIntento)}</div>}
+          {intentos ? <div>Intentos: {intentos}</div> : null}
+        </>
+      }
+    >
+      <Tag color="red">No enviado – error</Tag>
+    </Tooltip>
   );
 }
 

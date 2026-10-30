@@ -25,6 +25,7 @@ import {
 } from "./referencias";
 import { DatosAdicionalesCfe } from "./datosAdicionales";
 import { SobreDocumentoInfo } from "./sobre";
+import { NoEnviadoDgiTag } from "../sobres/componentes";
 import { RechazoComercial, RespuestaCfeEstado } from "./respuestaCfe";
 import { EmpresaConRutDgi } from "../../components/RutDgi";
 import { useSobreDocumento } from "./useSobre";
@@ -238,6 +239,12 @@ export function DocumentoShow() {
                     <Tooltip title={AYUDA_RECIBIDO}>
                       <Tag color={ESTADOS_CFE.RECIBIDO.color}>{ESTADOS_CFE.RECIBIDO.label}</Tag>
                     </Tooltip>
+                  ) : direccion === "EMITIDO" && sobre.data?.sobre && !sobre.data.sobre.estadoDgi ? (
+                    <NoEnviadoDgiTag
+                      error={sobre.data.sobre.errorEnvioDgi}
+                      ultimoIntento={sobre.data.sobre.fechaUltimoIntentoDgi}
+                      intentos={sobre.data.sobre.intentosDgi}
+                    />
                   ) : (
                     <Tag>Sin respuesta</Tag>
                   )}

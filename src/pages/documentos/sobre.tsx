@@ -1,8 +1,8 @@
-import { Alert, Collapse, Descriptions, Empty, Skeleton, Typography } from "antd";
+import { Alert, Collapse, Descriptions, Empty, Skeleton, Tag, Tooltip, Typography } from "antd";
 import { Link } from "react-router";
 import { formatFechaApi, formatFechaDia } from "../../constants/cfe";
 import { XmlCode } from "../../components/XmlCode";
-import { EstadoSobreTag } from "../sobres/componentes";
+import { EstadoSobreTag, NoEnviadoDgiTag } from "../sobres/componentes";
 import type { EstadoSobre } from "./useSobre";
 
 /** Indentado y coloreado; "copiar" copia el XML original (esta firmado: cambiar espacios invalida la firma) */
@@ -42,6 +42,9 @@ export function SobreDocumentoInfo({
     return <Empty description="El CFE no tiene sobre asociado" />;
 
   const emitido = data?.direccion === "EMITIDO";
+  // El sobre para la empresa receptora se manda recien cuando DGI acepta un CFE (undefined: API anterior, no se sabe)
+  const sinEnviarAReceptor =
+    emitido && !!sobre.xmlEmpresa && sobre.cfeAceptadoDgi === false;
 
   const xmls = [
     { key: "xmlDgi", label: "Sobre enviado a DGI", contenido: sobre.xmlDgi },
@@ -58,7 +61,9 @@ export function SobreDocumentoInfo({
     {
       key: "xmlEmpresa",
       label: emitido
-        ? "Sobre enviado a la empresa receptora"
+        ? sinEnviarAReceptor
+          ? "Sobre para la empresa receptora (todavía no enviado)"
+          : "Sobre para la empresa receptora"
         : "Sobre recibido",
       contenido: sobre.xmlEmpresa,
     },
@@ -102,7 +107,15 @@ export function SobreDocumentoInfo({
         {emitido && (
           <>
             <Descriptions.Item label="Estado DGI">
-              <EstadoSobreTag estado={sobre.estadoDgi} />
+              {sobre.estadoDgi ? (
+                <EstadoSobreTag estado={sobre.estadoDgi} />
+              ) : (
+                <NoEnviadoDgiTag
+                  error={sobre.errorEnvioDgi}
+                  ultimoIntento={sobre.fechaUltimoIntentoDgi}
+                  intentos={sobre.intentosDgi}
+                />
+              )}
             </Descriptions.Item>
             <Descriptions.Item label="Respuesta de DGI desde">
               {formatFechaApi(sobre.fechaConsulta) || "-"}
@@ -126,11 +139,34 @@ export function SobreDocumentoInfo({
               : "Estado de nuestra respuesta"
           }
         >
-          <EstadoSobreTag estado={sobre.estadoEmpresa} />
+          {emitido && !sobre.estadoEmpresa && !sobre.xmlEmpresa ? (
+            <Tooltip title="El receptor no es emisor electrónico: no se le envía el sobre">
+              <Tag>No corresponde</Tag>
+            </Tooltip>
+          ) : emitido && !sobre.estadoEmpresa && sinEnviarAReceptor ? (
+            <Tooltip title="Se le envía cuando DGI acepta el CFE">
+              <Tag>No enviado</Tag>
+            </Tooltip>
+          ) : (
+            <EstadoSobreTag estado={sobre.estadoEmpresa} />
+          )}
         </Descriptions.Item>
         <Descriptions.Item label="Motivo">
           {sobre.motivo || "-"}
         </Descriptions.Item>
+        {emitido && !sobre.estadoDgi && sobre.errorEnvioDgi && (
+          <Descriptions.Item label="Error al enviar a DGI" span={2}>
+            <Typography.Text type="danger" style={{ wordBreak: "break-word" }}>
+              {sobre.errorEnvioDgi}
+            </Typography.Text>
+            <div>
+              <Typography.Text type="secondary">
+                Último intento: {formatFechaApi(sobre.fechaUltimoIntentoDgi) || "-"}
+                {sobre.intentosDgi ? ` · ${sobre.intentosDgi} intentos` : ""}
+              </Typography.Text>
+            </div>
+          </Descriptions.Item>
+        )}
       </Descriptions>
 
       {xmls.length > 0 && (
