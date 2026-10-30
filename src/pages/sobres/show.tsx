@@ -10,7 +10,7 @@ import { ordenar } from "../../utils/orden";
 import { etiquetaEmpresa } from "../documentos/list";
 import { RechazoDgiAlert } from "../documentos/rechazo";
 import { SobreDocumentoInfo } from "../documentos/sobre";
-import { EstadoSobreTag } from "./componentes";
+import { EstadoSobreTag, NoEnviadoDgiTag } from "./componentes";
 import { RespuestaCfeEstado } from "../documentos/respuestaCfe";
 import { EmpresaConRutDgi } from "../../components/RutDgi";
 import {
@@ -64,9 +64,11 @@ export function SobreShow() {
     rechazo
       ? "BE"
       : estadoDgiMostrado(estadoEnSobre(c)?.estado ?? c.estado, sobre?.estadoDgi);
+  // Sobre emitido sin estado de DGI: no le llego, sus comprobantes tampoco
+  const sinRespuesta = emitido && !sobre?.estadoDgi ? "No enviado" : "Sin respuesta";
   const textoEstado = (c: ComprobanteResumen) => {
     const estado = estadoCfe(c);
-    return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : "Sin respuesta";
+    return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : sinRespuesta;
   };
   const contraparte = (c: ComprobanteResumen) =>
     emitido
@@ -127,7 +129,15 @@ export function SobreShow() {
             </Descriptions.Item>
             {emitido ? (
               <Descriptions.Item label="Estado DGI">
-                <EstadoSobreTag estado={sobre.estadoDgi} />
+                {sobre.estadoDgi ? (
+                  <EstadoSobreTag estado={sobre.estadoDgi} />
+                ) : (
+                  <NoEnviadoDgiTag
+                    error={sobre.errorEnvioDgi}
+                    ultimoIntento={sobre.fechaUltimoIntentoDgi}
+                    intentos={sobre.intentosDgi}
+                  />
+                )}
               </Descriptions.Item>
             ) : (
               <Descriptions.Item label="Nuestra respuesta">
@@ -188,7 +198,7 @@ export function SobreShow() {
                 sorter={ordenar<ComprobanteResumen>(textoEstado)}
                 render={(_, c) => {
                   const estado = estadoCfe(c);
-                  if (!estado) return <Tag>Sin respuesta</Tag>;
+                  if (!estado) return <Tag>{sinRespuesta}</Tag>;
                   return (
                     <Tag color={ESTADOS_CFE[estado]?.color}>
                       {ESTADOS_CFE[estado]?.label ?? estado}

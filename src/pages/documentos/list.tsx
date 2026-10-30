@@ -1,4 +1,5 @@
 import { EyeOutlined, FilePdfOutlined } from "@ant-design/icons";
+import type { SobreEmitidoRef } from "./rechazo";
 import { List, useTable } from "@refinedev/antd";
 import { useNotification, type CrudFilters } from "@refinedev/core";
 import { Button, Space, Table, Tag, Tooltip, Typography } from "antd";
@@ -34,8 +35,8 @@ export interface Documento {
   moneda?: string;
   totMntTotal?: number;
   estado?: string | null;
-  /** Sobre a DGI (emitidos): su estado se usa para mostrar Recibido */
-  sobreEmitido?: { id: number; estadoDgi?: string | null } | null;
+  /** Sobre a DGI (emitidos): su estado se usa para mostrar Recibido; sin estado no se envio (con el error, si fallo) */
+  sobreEmitido?: SobreEmitidoRef | null;
   titular?: { documento?: string; tipoDocumento?: string } | null;
   empresaEmisora?: EmpresaRef | null;
   empresaReceptora?: EmpresaRef | null;
@@ -57,7 +58,22 @@ const RESPUESTAS_ME: Record<string, { label: string; color?: string }> = {
   RECIBIDA: { label: "Recibida", color: "blue" },
 };
 
-function RespuestaTag({ estado, quien }: { estado?: string | null; quien: string }) {
+function RespuestaTag({
+  estado,
+  quien,
+  noEnviado,
+}: {
+  estado?: string | null;
+  quien: string;
+  /** Emitido que DGI todavia no acepto: el sobre se le manda al receptor recien con AE */
+  noEnviado?: boolean;
+}) {
+  if (!estado && noEnviado)
+    return (
+      <Tooltip title="Todavía no se le envió: se le envía cuando DGI acepta el CFE">
+        <Tag style={{ marginInlineEnd: 0 }}>No enviado</Tag>
+      </Tooltip>
+    );
   // Emitido a un receptor que no es emisor electronico: nunca se le envio el sobre, no va a responder
   if (estado === "NO_CORRESPONDE")
     return (
@@ -356,6 +372,7 @@ export function DocumentoList() {
               <EstadoDgiTag
                 estado={estado}
                 estadoSobreDgi={doc.sobreEmitido?.estadoDgi}
+                sobreEmitido={doc.sobreEmitido}
                 rut={empresa?.rut}
                 documento={
                   tipo
@@ -378,8 +395,12 @@ export function DocumentoList() {
           }
           dataIndex="respuestaME"
           align="center"
-          render={(estado?: string | null) => (
-            <RespuestaTag estado={estado} quien={direccion === "EMITIDO" ? "del receptor" : "nuestra"} />
+          render={(estado: string | null | undefined, doc) => (
+            <RespuestaTag
+              estado={estado}
+              quien={direccion === "EMITIDO" ? "del receptor" : "nuestra"}
+              noEnviado={direccion === "EMITIDO" && !!doc.sobreEmitido && doc.estado !== "AE"}
+            />
           )}
         />
         <Table.Column<Documento>

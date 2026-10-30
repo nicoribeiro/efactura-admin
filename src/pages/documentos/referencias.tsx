@@ -39,8 +39,12 @@ const textoDocumento = (d: Documento) =>
 /** Estado de DGI como se ve en la tabla */
 const textoEstado = (d: DocumentoConReferencia) => {
   const estado = estadoDgiMostrado(d.estado, d.sobreEmitido?.estadoDgi);
-  return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : "Sin respuesta";
+  return estado ? (ESTADOS_CFE[estado]?.label ?? estado) : sinEstado(d);
 };
+
+/** Sin estado: el sobre emitido sin estado de DGI no se envio; si no, DGI todavia no respondio */
+const sinEstado = (d: DocumentoConReferencia) =>
+  d.sobreEmitido && !d.sobreEmitido.estadoDgi ? "No enviado" : "Sin respuesta";
 
 const NoInformado = ({ ayuda }: { ayuda: string }) => (
   <Tooltip title={ayuda}>
@@ -251,7 +255,7 @@ export function ReferenciasDocumento({
                       {ESTADOS_CFE[estado]?.label ?? estado}
                     </Tag>
                   ) : (
-                    <Tag>Sin respuesta</Tag>
+                    <Tag>{sinEstado(d)}</Tag>
                   );
                 }}
               />

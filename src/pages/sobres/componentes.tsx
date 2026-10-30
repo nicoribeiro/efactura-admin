@@ -71,14 +71,29 @@ export function EstadoSobreDgi({
   estado,
   rut,
   idSobre,
+  error,
+  ultimoIntento,
+  intentos,
 }: {
   estado?: string | null;
   rut: string;
   idSobre: number;
+  /** Sin estado: error del ultimo intento de envio (errorEnvioDgi) */
+  error?: string | null;
+  ultimoIntento?: string | null;
+  intentos?: number | null;
 }) {
   const [contenido, setContenido] = useState<ReactNode>(null);
   const [cargado, setCargado] = useState(false);
 
+  if (!estado)
+    return (
+      <NoEnviadoDgiTag
+        error={error}
+        ultimoIntento={ultimoIntento}
+        intentos={intentos}
+      />
+    );
   const tag = <EstadoSobreTag estado={estado} />;
   if (estado !== "BS") return tag;
 
