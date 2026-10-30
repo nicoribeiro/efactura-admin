@@ -26,6 +26,13 @@ export interface Sobre {
   xmlDgi?: string | null;
   respuesta_dgi?: string | null;
   resultado_dgi?: string | null;
+  /** Ultimo error al enviar el sobre a DGI (null si nunca fallo o si DGI ya lo recibio) */
+  errorEnvioDgi?: string | null;
+  fechaUltimoIntentoDgi?: string | null;
+  /** null en los sobres anteriores a este registro */
+  intentosDgi?: number | null;
+  /** DGI acepto algun CFE del sobre: recien entonces se le manda el sobre a la empresa receptora */
+  cfeAceptadoDgi?: boolean;
   // Recibido
   timestampRecibido?: string | null;
   timestampProcesado?: string | null;
