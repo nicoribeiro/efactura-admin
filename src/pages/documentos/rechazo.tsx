@@ -1,4 +1,5 @@
 import { Alert, Space, Spin, Tag, Tooltip, Typography } from "antd";
+import { NoEnviadoDgiTag } from "../sobres/componentes";
 import { useState, type ReactNode } from "react";
 import { AYUDA_RECIBIDO, ESTADOS_CFE, estadoDgiMostrado } from "../../constants/cfe";
 import {
@@ -98,9 +99,19 @@ export function RechazoDgiAlert({ rechazo }: { rechazo: RechazoDgi }) {
  * Etiqueta de estado DGI para el listado. En los rechazados/observados, al pasar el mouse busca el sobre (una sola vez)
  * y muestra el motivo.
  */
+/** Sobre a DGI de un CFE emitido, como viene en el listado */
+export interface SobreEmitidoRef {
+  id: number;
+  estadoDgi?: string | null;
+  errorEnvioDgi?: string | null;
+  fechaUltimoIntentoDgi?: string | null;
+  intentosDgi?: number | null;
+}
+
 export function EstadoDgiTag({
   estado,
   estadoSobreDgi,
+  sobreEmitido,
   rut,
   documento,
   direccion,
@@ -109,6 +120,8 @@ export function EstadoDgiTag({
   estado?: string | null;
   /** Estado DGI del sobre (emitidos): con AS y sin estado del CFE se muestra Recibido */
   estadoSobreDgi?: string | null;
+  /** Sobre del CFE emitido: sin estado de DGI no se le envio (No enviado, con el error si fallo) */
+  sobreEmitido?: SobreEmitidoRef | null;
   rut?: string;
   documento?: DocumentoRef;
   direccion: string;
@@ -117,11 +130,21 @@ export function EstadoDgiTag({
   const [contenido, setContenido] = useState<ReactNode>(null);
   const [cargado, setCargado] = useState(false);
 
-  if (!estado && direccion === "EMITIDO" && estadoDgiMostrado(estado, estadoSobreDgi) === "RECIBIDO")
+  // Emitido sin estado propio: el que se deduce del sobre (Recibido o, con el sobre rechazado, Rechazado)
+  if (!estado && direccion === "EMITIDO") estado = estadoDgiMostrado(estado, estadoSobreDgi) ?? estado;
+  if (estado === "RECIBIDO")
     return (
       <Tooltip title={AYUDA_RECIBIDO}>
         <Tag color={ESTADOS_CFE.RECIBIDO.color}>{ESTADOS_CFE.RECIBIDO.label}</Tag>
       </Tooltip>
+    );
+  if (!estado && direccion === "EMITIDO" && sobreEmitido && !sobreEmitido.estadoDgi)
+    return (
+      <NoEnviadoDgiTag
+        error={sobreEmitido.errorEnvioDgi}
+        ultimoIntento={sobreEmitido.fechaUltimoIntentoDgi}
+        intentos={sobreEmitido.intentosDgi}
+      />
     );
   if (!estado) return <Tag>Sin respuesta</Tag>;
   const tag = (

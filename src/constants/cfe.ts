@@ -175,11 +175,12 @@ export const AYUDA_RECIBIDO =
   "DGI recibió el sobre pero todavía no respondió por el CFE (en producción responde aprox. una hora después)";
 
 /**
- * Estado DGI a mostrar de un comprobante: el suyo; si no tiene pero DGI ya acepto su sobre (AS), RECIBIDO; si no, null
- * (Sin respuesta)
+ * Estado DGI a mostrar de un comprobante: el suyo; si no tiene pero DGI ya acepto su sobre (AS), RECIBIDO; si rechazo el
+ * sobre (BS), BE (DGI no proceso ninguno de sus comprobantes); si no, null (sin respuesta o no enviado)
  */
 export const estadoDgiMostrado = (estado?: string | null, estadoSobreDgi?: string | null) =>
-  estado || (estadoSobreDgi === "AS" ? "RECIBIDO" : null);
+  estado ||
+  (estadoSobreDgi === "AS" ? "RECIBIDO" : estadoSobreDgi === "BS" ? "BE" : null);
 
 /** Estados de la respuesta de DGI para filtrar el listado (SIN = sin respuesta) */
 export const ESTADOS_FILTRO = [

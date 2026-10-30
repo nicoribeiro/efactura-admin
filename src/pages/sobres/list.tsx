@@ -505,6 +505,9 @@ export function SobreList() {
                   estado={s.estadoDgi}
                   rut={empresa.rut}
                   idSobre={s.id}
+                  error={s.errorEnvioDgi}
+                  ultimoIntento={s.fechaUltimoIntentoDgi}
+                  intentos={s.intentosDgi}
                 />
               )}
             />
@@ -526,6 +529,11 @@ export function SobreList() {
                 s.enviadoAEmpresa === false ? (
                   <Tooltip title="El receptor no es emisor electrónico: no responde">
                     <Typography.Text type="secondary">-</Typography.Text>
+                  </Tooltip>
+                ) : !s.estadoEmpresa && !s.comprobantes.some((c) => c.estado === "AE") ? (
+                  // El sobre se le manda al receptor recien cuando DGI acepta un CFE
+                  <Tooltip title="Todavía no se le envió: se le envía cuando DGI acepta el CFE">
+                    <Tag>No enviado</Tag>
                   </Tooltip>
                 ) : (
                   <EstadoSobreTag estado={s.estadoEmpresa} />

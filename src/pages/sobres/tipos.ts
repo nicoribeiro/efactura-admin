@@ -28,6 +28,10 @@ export interface SobreResumen {
   estadoDgi?: string | null;
   estadoEmpresa?: string | null;
   fechaConsulta?: string | null;
+  /** Emitidos sin estadoDgi: error del ultimo intento de envio a DGI (API con el registro de envios) */
+  errorEnvioDgi?: string | null;
+  fechaUltimoIntentoDgi?: string | null;
+  intentosDgi?: number | null;
   timestampRecibido?: string | null;
   timestampProcesado?: string | null;
   /** Emitidos: false si el sobre nunca se le envio al receptor (no es emisor electronico), no va a responder */
@@ -52,11 +56,11 @@ export const ESTADOS_SOBRE: Record<string, { label: string; color: string }> = {
   BA: { label: "BA", color: "orange" },
 };
 
-/** Filtro de estado del listado de sobres (SIN = sin estado) */
+/** Filtro de estado DGI del listado de sobres (SIN = sin estado: DGI acusa recibo al enviar, asi que no le llego) */
 export const ESTADOS_SOBRE_FILTRO = [
   { value: "AS", label: "Recibido" },
   { value: "BS", label: "Rechazado" },
-  { value: "SIN", label: "Sin respuesta" },
+  { value: "SIN", label: "No enviado" },
 ];
 
 /** "eFactura A-2311" */

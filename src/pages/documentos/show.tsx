@@ -232,6 +232,10 @@ export function DocumentoShow() {
                 <Tag color={ESTADOS_CFE[doc.estado]?.color}>
                   {ESTADOS_CFE[doc.estado]?.label ?? doc.estado}
                 </Tag>
+              ) : direccion === "EMITIDO" && sobre.data?.sobre?.estadoDgi === "BS" ? (
+                <Tooltip title="DGI rechazó el sobre: no procesó sus comprobantes">
+                  <Tag color={ESTADOS_CFE.BE.color}>{ESTADOS_CFE.BE.label}</Tag>
+                </Tooltip>
               ) : (
                 <Space size={8} wrap>
                   {direccion === "EMITIDO" &&
